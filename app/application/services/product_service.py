@@ -1,5 +1,6 @@
 from app.domain.entities.product import Product
 from app.domain.repositories.product_repository import ProductRepository
+from app.application.exceptions import NotFoundError, ValidationError
 
 class ProductService:
     def __init__(self, repository: ProductRepository):
@@ -12,11 +13,11 @@ class ProductService:
             stock: int,
     ) -> Product:
         if not name.strip():
-            raise ValueError("Urun adi bos olamaz")
+            raise ValidationError("Urun adi bos olamaz")
         if price < 0:
-            raise ValueError("Fiyat negatig olamaz")
+            raise ValidationError("Fiyat negatig olamaz")
         if stock < 0:
-            raise ValueError("Stok negatif olamaz")
+            raise ValidationError("Stok negatif olamaz")
 
         product = Product(
             id = None,
@@ -34,7 +35,7 @@ class ProductService:
         product = self.repository.get_by_id(product_id)
 
         if product is None:
-            raise ValueError("Urun bulunamadi")
+            raise NotFoundError("Urun bulunamadi")
 
         return product
 
@@ -46,16 +47,16 @@ class ProductService:
         stock: int,
     ) -> Product:
         if not name.strip():
-            raise ValueError("Urun adi bos olamaz")
+            raise ValidationError("Urun adi bos olamaz")
         if price < 0:
-            raise ValueError("Fiyat negatif olamaz")
+            raise ValidationError("Fiyat negatif olamaz")
         if stock < 0:
-            raise ValueError("Stok negatif olamaz")
+            raise ValidationError("Stok negatif olamaz")
 
         existing_product = self.repository.get_by_id(product_id)
 
         if existing_product is None:
-            raise ValueError("Urun bulunamadi")
+            raise NotFoundError("Urun bulunamadi")
 
         updated_product = Product(
             id = product_id,
@@ -67,7 +68,7 @@ class ProductService:
         result = self.repository.update(updated_product)
 
         if result is None:
-            raise ValueError("Urun guncellenemedi")
+            raise NotFoundError("Urun guncellenemedi")
 
         return result
 
@@ -76,9 +77,9 @@ class ProductService:
         product = self.repository.get_by_id(product_id)
 
         if product is None:
-            raise ValueError("Urun bulunamadi")
+            raise NotFoundError("Urun bulunamadi")
 
         deleted = self.repository.delete(product_id)
 
         if not deleted:
-            raise ValueError("Urun silinemedi")
+            raise NotFoundError("Urun silinemedi")
