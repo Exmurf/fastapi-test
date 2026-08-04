@@ -5,10 +5,14 @@ from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
 from app.presentation.routers.product_router import router as product_router
 from app.application.exceptions import NotFoundError, ValidationError
+from app.config import settings
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Product API")
+app = FastAPI(
+    title= settings.app_name,
+    debug = settings.debug,
+)
 
 @app.exception_handler(NotFoundError)
 def not_found_exception_handler(
