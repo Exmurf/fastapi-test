@@ -1,4 +1,4 @@
-from sqlalchemy import Float, Integer, String
+from sqlalchemy import Float, Integer, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
@@ -25,4 +25,10 @@ class ProductModel(Base):
     stock: Mapped[int] = mapped_column(
         Integer,
         nullable=False
+    )
+
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
     )

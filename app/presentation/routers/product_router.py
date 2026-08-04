@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 
 from app.application.schemas.product_schema import (
     ProductCreate,
     ProductResponse,
     ProductUpdate,
+    PaginatedProductResponse,
 )
 from app.application.services.product_service import ProductService
 from app.infrastructure.database import get_db
@@ -16,6 +17,8 @@ from app.presentation.responses import (
     ApiResponse,
     success_response,
 )
+
+from typing import Literal
 
 
 router = APIRouter(
@@ -54,14 +57,71 @@ def create_product(
 
 @router.get(
     "",
-    response_model=ApiResponse[list[ProductResponse]],
+    response_model=ApiResponse[PaginatedProductResponse],
 )
 def get_all_products(
+    page: int = Query(
+        default=1,
+        ge=1,
+        description="Sayfa numarasi",
+    ),
+    page_size: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+        description="Sayfa basina urun sayisi",
+    ),
+    min_price: float | None = Query(
+        default=None,
+        ge=0,
+        description="Minimum urun fiyati",
+    ),
+    max_price: float | None = Query(
+            default=None,
+            ge=0,
+            description="Maksimum urun fiyati",
+    ),
+    min_stock: int | None = Query(
+            default=None,
+            ge=0,
+            description="Minimum stok miktari",
+    ),
+    search: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="Urun adinda aranacak metin"
+    ),
+    sort_by: Literal[
+        "id",
+        "name",
+        "price",
+        "stock",
+    ] = Query(
+        default="id",
+        description="Siralama alani",
+    ),
+    sort_order: Literal[
+        "asc",
+        "desc",
+    ] = Query(
+        default="asc",
+        description="Siralama yonu",
+    ),
     service: ProductService = Depends(get_product_service),
 ):
-    products = service.get_all_products()
+    result = service.get_all_products(
+        page=page,
+        page_size=page_size,
+        min_price=min_price,
+        max_price=max_price,
+        min_stock=min_stock,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
 
-    return success_response(products)
+    return success_response(result)
 
 
 @router.get(

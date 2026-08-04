@@ -21,16 +21,73 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return self._to_entity(product_model)
 
-    def get_all(self) -> list[Product]:
-        product_models = self.db.query(ProductModel).all()
+    def get_all(
+        self,
+        min_price: float | None = None,
+        max_price: float | None = None,
+        min_stock: int | None = None,
+        search: str | None = None,
+        sort_by: str = "id",
+        sort_order: str = "asc",
+        offset: int = 0,
+        limit: int = 10,
+    ) -> tuple[list[Product], int]:
 
-        return [
+        query = self.db.query(ProductModel)
+
+        query = query.filter(
+            ProductModel.is_deleted.is_(False)
+        )
+
+        if search is not None:
+            query = query.filter(
+                ProductModel.name.ilike(f"%{search}%")
+            )
+
+        if min_price is not None:
+            query = query.filter(ProductModel.price >= min_price)
+        
+        if max_price is not None:
+            query = query.filter(ProductModel.price <= max_price)
+        
+        if min_stock is not None:
+            query = query.filter(ProductModel.price >= min_stock)
+
+        total_items = query.count()
+
+        sort_columns = {
+            "id": ProductModel.id,
+            "name": ProductModel.name,
+            "price": ProductModel.price,
+            "stock": ProductModel.stock,
+        }
+
+        sort_column = sort_columns[sort_by]
+
+        if sort_order == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+
+        product_models = (
+            query
+            .order_by(ProductModel.id.asc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        products = [
             self._to_entity(product_model)
             for product_model in product_models
         ]
 
+        return products, total_items
+
     def get_by_id(self,product_id: int) -> Product | None:
-        product_model = self.db.get(ProductModel, product_id)
+        product_model = self._get_active_model(
+            product_id
+        )
 
         if product_model is None:
             return None
@@ -41,7 +98,7 @@ class SQLAlchemyProductRepository(ProductRepository):
         if product.id is None:
             return None
 
-        product_model = self.db.get(ProductModel, product.id)
+        product_model = self._get_active_model(product.id)
 
         if product_model is None:
             return None
@@ -56,15 +113,29 @@ class SQLAlchemyProductRepository(ProductRepository):
         return self._to_entity(product_model)
 
     def delete(self, product_id: int) -> bool:
-        product_model = self.db.get(ProductModel, product_id)
+        product_model = self._get_active_model(product_id)
 
         if product_model is None:
             return False
 
-        self.db.delete(product_model)
+        product_model.is_deleted = True
+
         self.db.commit()
 
         return True
+
+    def _get_active_model(
+        self,
+        product_id: int,
+    ) -> ProductModel | None:
+        return(
+            self.db.query(ProductModel)
+            .filter(
+                ProductModel.id == product_id,
+                ProductModel.is_deleted.is_(False),
+            )
+            .first()
+        )
 
     @staticmethod
     def _to_entity(product_model: ProductModel) -> Product:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
@@ -40,6 +41,39 @@ def validation_exception_handler(
             "data": {},
             "message": str(error),
         },
+    )
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request,
+    error: RequestValidationError,
+):
+    formatted_errors = []
+
+    for validation_error in error.errors():
+        location = validation_error["loc"]
+
+        field_parts = [
+            str(part)
+            for part in location
+            if part not in {"body", "query", "path"}
+        ]
+
+        formatted_errors.append(
+            {
+                "field": ".".join(field_parts),
+                "message": validation_error["msg"],
+            }
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={
+            "status": False,
+            "data": {},
+            "message": "Gonderilen veriler gecersiz",
+            "errors": formatted_errors,
+        }
     )
 
 app.include_router(product_router)

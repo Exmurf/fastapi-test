@@ -1,4 +1,4 @@
-from typing import Generic, Literal, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
@@ -11,6 +11,7 @@ class ApiErrorResponse(BaseModel):
     status: Literal[False] = False
     data: dict = Field(default_factory=dict)
     message: str
+    errors: list[dict[str, Any]] | None = None
 
 def success_response(data: T) -> dict:
     return{

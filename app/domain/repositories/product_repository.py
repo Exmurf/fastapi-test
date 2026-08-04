@@ -8,7 +8,17 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def get_all(self) -> list[Product]:
+    def get_all(
+        self,
+        min_price: float | None = None,
+        max_price: float | None = None,
+        min_stock: int | None = None,
+        search: str | None = None,
+        sort_by: str = "id",
+        sort_order: str = "asc",
+        offset: int = 0,
+        limit: int = 10,
+    ) -> tuple[list[Product], int]:
         pass
 
     @abstractmethod

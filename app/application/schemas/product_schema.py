@@ -17,4 +17,11 @@ class ProductResponse(BaseModel):
     name:str
     price:float
     stock:int
+
+class PaginatedProductResponse(BaseModel):
+    items: list[ProductResponse]
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
     
