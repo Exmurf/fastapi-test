@@ -4,8 +4,17 @@ from fastapi.exceptions import RequestValidationError
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
+from app.infrastructure.models.user_model import UserModel
 from app.presentation.routers.product_router import router as product_router
-from app.application.exceptions import NotFoundError, ValidationError
+from app.presentation.routers.auth_router import(
+    router as auth_router,
+)
+from app.application.exceptions import (
+    NotFoundError, 
+    ValidationError,
+    ConflictError,
+    AuthenticationError,
+)
 from app.config import settings
 
 Base.metadata.create_all(bind=engine)
@@ -14,6 +23,39 @@ app = FastAPI(
     title= settings.app_name,
     debug = settings.debug,
 )
+
+@app.exception_handler(AuthenticationError)
+async def authentication_error_handler(
+    request: Request,
+    error: AuthenticationError,
+):
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={
+            "status": False,
+            "data": {},
+            "message": str(error),
+            "errors": None,
+        },
+        headers={
+            "WWW-Authenticate": "Bearer",
+        }
+    )
+
+@app.exception_handler(ConflictError)
+async def conflict_error_handler(
+    request: Request,
+    error: ConflictError,
+):
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "status": False,
+            "data": {},
+            "message": str(error),
+            "errors": None,
+        },
+    )
 
 @app.exception_handler(NotFoundError)
 def not_found_exception_handler(
@@ -77,6 +119,7 @@ async def request_validation_exception_handler(
     )
 
 app.include_router(product_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def root():

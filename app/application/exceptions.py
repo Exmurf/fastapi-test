@@ -6,3 +6,9 @@ class ValidationError(ApplicationError):
 
 class NotFoundError(ApplicationError):
     pass
+
+class ConflictError(ApplicationError):
+    pass
+
+class AuthenticationError(ApplicationError):
+    pass
