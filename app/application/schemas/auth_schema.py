@@ -13,6 +13,15 @@ class LoginRequest(BaseModel):
         max_length=128,
     )
 
+class UserResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+    public_id: str
+    email: EmailStr
+    is_active: bool
+
 class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -27,14 +36,6 @@ class RegisterRequest(BaseModel):
         max_length=128,
     )
 
-class UserResponse(BaseModel):
-    model_config = ConfigDict(
-        from_attributes=True
-    )
-
-    public_id: str
-    email: EmailStr
-    is_active: bool
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(
