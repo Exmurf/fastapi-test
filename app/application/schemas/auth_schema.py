@@ -47,3 +47,8 @@ class RefreshTokenResponse(BaseModel):
     token_type: str
     expires_in: int
 
+class LogoutRequest(BaseModel):
+    refresh_token: str = Field(
+        min_length=1,
+    )
+

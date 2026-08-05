@@ -248,3 +248,41 @@ class AuthService:
                 .expires_in_seconds
             ),
         }
+
+    def logout(
+        self,
+        raw_refresh_token: str,
+    ) -> bool:
+        token_hash = (
+            self.refresh_token_service.hash_token(
+                raw_refresh_token
+            )
+        )
+
+        refresh_token = (
+            self.refresh_token_repository
+            .get_by_token_hash(token_hash)
+        )
+
+        if refresh_token is None:
+            raise AuthenticationError(
+                "Gecersiz refresh token"
+            )
+
+        if refresh_token.revoked_at is not None:
+            raise AuthenticationError(
+                "Refresh token zaten iptal edilmis"
+            )
+
+        revoked = (
+            self.refresh_token_repository.revoke(
+                token_hash
+            )
+        )
+
+        if not revoked:
+            raise AuthenticationError(
+                "Refresh token iptal edilemedi"
+            )
+
+        return True

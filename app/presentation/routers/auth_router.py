@@ -7,9 +7,12 @@ from sqlalchemy.orm import Session
 
 from app.application.schemas.auth_schema import (
     LoginRequest,
+    LoginResponse,
+    LogoutRequest,
+    RefreshTokenRequest,
+    RefreshTokenResponse,
     RegisterRequest,
     UserResponse,
-    LoginResponse,
 )
 from app.application.security.password_hasher import(
     PasswordHasher,
@@ -55,10 +58,6 @@ from app.domain.repositories.refresh_token_repository import (
 from app.presentation.dependencies.auth_dependencies import (
     get_refresh_token_repository,
     get_refresh_token_service,
-)
-from app.application.schemas.auth_schema import (
-    RefreshTokenRequest,
-    RefreshTokenResponse,
 )
 
 router = APIRouter(
@@ -159,3 +158,29 @@ def refresh_access_token(
     )
 
     return success_response(result)
+
+@router.post(
+    "/logout",
+    response_model = ApiResponse[dict],
+    status_code = status.HTTP_200_OK,
+    responses = {
+        401: {"model": ApiErrorResponse},
+    },
+)
+def logout(
+    request: LogoutRequest,
+    service: AuthService = Depends(
+        get_auth_service
+    ),
+):
+    service.logout(
+        raw_refresh_token=request.refresh_token
+    )
+
+    return success_response(
+        {
+            "message": (
+                "Basariyla cikis yapildi"
+            ),
+        }
+    )
