@@ -15,6 +15,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
     expires_in: int
     user: UserResponse
@@ -34,4 +35,15 @@ class UserResponse(BaseModel):
     public_id: str
     email: EmailStr
     is_active: bool
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(
+        min_length = 1,
+    )
+
+class RefreshTokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
 

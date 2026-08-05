@@ -10,6 +10,7 @@ class ProductRepository(ABC):
     @abstractmethod
     def get_all(
         self,
+        owner_id: int,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,
@@ -22,7 +23,12 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, product_id: int) -> Product | None:
+    def get_by_public_id(
+        self, 
+        public_id: str,
+        owner_id: int,
+
+    ) -> Product | None:
         pass
 
     @abstractmethod
@@ -30,5 +36,9 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, product_id: int) -> bool:
+    def delete(
+        self, 
+        public_id: str,
+        owner_id: int,
+    ) -> bool:
         pass

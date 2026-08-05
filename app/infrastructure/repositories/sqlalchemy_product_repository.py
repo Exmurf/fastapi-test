@@ -8,8 +8,12 @@ class SQLAlchemyProductRepository(ProductRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, product: Product) -> Product:
+    def create(
+        self, 
+        product: Product
+    ) -> Product:
         product_model = ProductModel(
+            owner_id = product.owner_id,
             name = product.name,
             price = product.price,
             stock = product.stock,
@@ -23,6 +27,7 @@ class SQLAlchemyProductRepository(ProductRepository):
 
     def get_all(
         self,
+        owner_id: int,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,
@@ -36,6 +41,7 @@ class SQLAlchemyProductRepository(ProductRepository):
         query = self.db.query(ProductModel)
 
         query = query.filter(
+            ProductModel.owner_id == owner_id,
             ProductModel.is_deleted.is_(False)
         )
 
@@ -51,7 +57,7 @@ class SQLAlchemyProductRepository(ProductRepository):
             query = query.filter(ProductModel.price <= max_price)
         
         if min_stock is not None:
-            query = query.filter(ProductModel.price >= min_stock)
+            query = query.filter(ProductModel.stock >= min_stock)
 
         total_items = query.count()
 
@@ -65,13 +71,22 @@ class SQLAlchemyProductRepository(ProductRepository):
         sort_column = sort_columns[sort_by]
 
         if sort_order == "desc":
-            query = query.order_by(sort_column.desc())
+            sort_expression = sort_column.desc()
         else:
-            query = query.order_by(sort_column.asc())
+            sort_expression = sort_column.asc()
+
+        if sort_by == "id":
+            query = query.order_by(
+                sort_expression
+            )
+        else:
+            query = query.order_by(
+                sort_expression,
+                ProductModel.id.asc(),
+            )
 
         product_models = (
             query
-            .order_by(ProductModel.id.asc())
             .offset(offset)
             .limit(limit)
             .all()
@@ -84,9 +99,14 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return products, total_items
 
-    def get_by_id(self,product_id: int) -> Product | None:
+    def get_by_public_id(
+        self,
+        public_id: str,
+        owner_id: int,
+    ) -> Product | None:
         product_model = self._get_active_model(
-            product_id
+            public_id=public_id,
+            owner_id=owner_id,
         )
 
         if product_model is None:
@@ -94,11 +114,17 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return self._to_entity(product_model)
 
-    def update(self,product: Product) -> Product | None:
+    def update(
+        self,
+        product: Product
+    ) -> Product | None:
         if product.id is None:
             return None
 
-        product_model = self._get_active_model(product.id)
+        product_model = self._get_active_model(
+            public_id = product.public_id,
+            owner_id = product.owner_id,
+        )
 
         if product_model is None:
             return None
@@ -112,8 +138,15 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return self._to_entity(product_model)
 
-    def delete(self, product_id: int) -> bool:
-        product_model = self._get_active_model(product_id)
+    def delete(
+        self, 
+        public_id: str,
+        owner_id: int,
+    ) -> bool:
+        product_model = self._get_active_model(
+            public_id=public_id,
+            owner_id=owner_id,
+        )
 
         if product_model is None:
             return False
@@ -126,21 +159,27 @@ class SQLAlchemyProductRepository(ProductRepository):
 
     def _get_active_model(
         self,
-        product_id: int,
+        public_id: str,
+        owner_id: int,
     ) -> ProductModel | None:
         return(
             self.db.query(ProductModel)
             .filter(
-                ProductModel.id == product_id,
+                ProductModel.public_id == public_id,
+                ProductModel.owner_id == owner_id,
                 ProductModel.is_deleted.is_(False),
             )
             .first()
         )
 
     @staticmethod
-    def _to_entity(product_model: ProductModel) -> Product:
+    def _to_entity(
+        product_model: ProductModel
+    ) -> Product:
         return Product(
             id = product_model.id,
+            public_id=product_model.public_id,
+            owner_id=product_model.owner_id,
             name = product_model.name,
             price = product_model.price,
             stock = product_model.stock,

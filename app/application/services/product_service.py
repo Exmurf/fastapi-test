@@ -13,6 +13,7 @@ class ProductService:
             name: str,
             price: float,
             stock: int,
+            owner_id: int,
     ) -> Product:
         if not name.strip():
             raise ValidationError("Urun adi bos olamaz")
@@ -23,7 +24,9 @@ class ProductService:
 
         product = Product(
             id = None,
-            name = name,
+            public_id = None,
+            owner_id = owner_id,
+            name = name.strip(),
             price = price,
             stock = stock,
         )
@@ -33,6 +36,7 @@ class ProductService:
     def get_all_products(
         self,
         page: int,
+        owner_id: int,
         page_size: int,
         min_price: float | None = None,
         max_price: float | None = None,
@@ -76,6 +80,7 @@ class ProductService:
         offset = (page - 1) * page_size
 
         products, total_items = self.repository.get_all(
+            owner_id=owner_id,
             min_price=min_price,
             max_price=max_price,
             min_stock=min_stock,
@@ -96,8 +101,15 @@ class ProductService:
             "total_pages": total_pages,
         }
 
-    def get_product_by_id(self, product_id: int) -> Product | None:
-        product = self.repository.get_by_id(product_id)
+    def get_product_by_id(
+        self, 
+        public_id: str,
+        owner_id: int,
+    ) -> Product | None:
+        product = self.repository.get_by_public_id(
+            public_id = public_id,
+            owner_id=owner_id,
+        )
 
         if product is None:
             raise NotFoundError("Urun bulunamadi")
@@ -106,10 +118,11 @@ class ProductService:
 
     def update_product(
         self,
-        product_id: int,
+        public_id: str,
         name: str,
         price: float,
         stock: int,
+        owner_id: int,
     ) -> Product:
         if not name.strip():
             raise ValidationError("Urun adi bos olamaz")
@@ -118,33 +131,54 @@ class ProductService:
         if stock < 0:
             raise ValidationError("Stok negatif olamaz")
 
-        existing_product = self.repository.get_by_id(product_id)
+        existing_product = self.repository.get_by_public_id(
+            public_id=public_id,
+            owner_id=owner_id,
+        )
 
         if existing_product is None:
             raise NotFoundError("Urun bulunamadi")
 
-        updated_product = Product(
-            id = product_id,
-            name = name,
-            price = price,
-            stock = stock,
+        product = Product(
+        id=existing_product.id,
+        public_id=existing_product.public_id,
+        owner_id=existing_product.owner_id,
+        name=name.strip(),
+        price=price,
+        stock=stock,
         )
 
-        result = self.repository.update(updated_product)
+        updated_product = self.repository.update(
+            product
+        )
 
-        if result is None:
-            raise NotFoundError("Urun guncellenemedi")
+        if updated_product is None:
+            raise NotFoundError(
+                "Urun bulunamadi"
+            )
 
-        return result
+        return updated_product
 
-    def delete_product(self, product_id:int) -> bool:
+    def delete_product(
+        self, 
+        public_id: str,
+        owner_id: int,
+    ) -> bool:
 
-        product = self.repository.get_by_id(product_id)
+        product = self.repository.get_by_public_id(
+            public_id=public_id,
+            owner_id=owner_id,
+        )
 
         if product is None:
             raise NotFoundError("Urun bulunamadi")
 
-        deleted = self.repository.delete(product_id)
+        deleted = self.repository.delete(
+            public_id=public_id,
+            owner_id=owner_id,
+        )
 
         if not deleted:
             raise NotFoundError("Urun silinemedi")
+
+        return True

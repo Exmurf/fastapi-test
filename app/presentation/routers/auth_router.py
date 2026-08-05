@@ -29,6 +29,7 @@ from app.infrastructure.security.argon2_password_hasher import (
 )
 from app.presentation.responses import (
     ApiResponse,
+    ApiErrorResponse,
     success_response,
 )
 from app.config import settings
@@ -38,35 +39,33 @@ from app.application.security.access_token_service import (
 from app.infrastructure.security.jwt_access_token_service import (
     JWTAccessTokenService,
 )
+from app.presentation.dependencies.auth_dependencies import (
+    get_access_token_service,
+    get_current_user,
+    get_password_hasher,
+    get_user_repository,
+)
+from app.domain.entities.user import User
+from app.application.security.refresh_token_service import (
+    RefreshTokenService,
+)
+from app.domain.repositories.refresh_token_repository import (
+    RefreshTokenRepository,
+)
+from app.presentation.dependencies.auth_dependencies import (
+    get_refresh_token_repository,
+    get_refresh_token_service,
+)
+from app.application.schemas.auth_schema import (
+    RefreshTokenRequest,
+    RefreshTokenResponse,
+)
 
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"],
 )
 
-argon2_password_hasher = Argon2PasswordHasher()
-
-jwt_access_token_service = JWTAccessTokenService(
-    secret_key=(
-        settings.jwt_secret_key.get_secret_value()
-    ),
-    algorithm=settings.jwt_algorithm,
-    expire_minutes=(
-        settings.access_token_expire_minutes
-    ),
-)
-
-def get_access_token_service(
-) -> AccessTokenService:
-    return jwt_access_token_service
-
-def get_user_repository(
-        db: Session = Depends(get_db),
-) -> UserRepository:
-    return SQLAlchemyUserRepository(db)
-
-def get_password_hasher() -> PasswordHasher:
-    return argon2_password_hasher
 
 def get_auth_service(
         user_repository: UserRepository = Depends(
@@ -78,11 +77,19 @@ def get_auth_service(
         access_token_service: AccessTokenService = Depends(
             get_access_token_service
         ),
+        refresh_token_repository: RefreshTokenRepository = Depends(
+            get_refresh_token_repository
+        ),
+        refresh_token_service: RefreshTokenService = Depends(
+            get_refresh_token_service
+        ),
 ) -> AuthService:
     return AuthService(
         user_repository=user_repository,
         password_hasher=password_hasher,
         access_token_service=access_token_service,
+        refresh_token_repository=refresh_token_repository,
+        refresh_token_service=refresh_token_service,
     )
 
 
@@ -117,6 +124,38 @@ def login(
     result = service.login(
         email=str(request.email),
         password=request.password,
+    )
+
+    return success_response(result)
+
+@router.get(
+    "/me",
+    response_model=ApiResponse[UserResponse],
+)
+def get_me(
+    current_user: User = Depends(
+        get_current_user
+    ),
+):
+    return success_response(current_user)
+
+@router.post(
+    "/refresh",
+    response_model = ApiResponse[RefreshTokenResponse],
+    responses = {
+        401: {"model": ApiErrorResponse},
+    },
+)
+def refresh_access_token(
+    request: RefreshTokenRequest,
+    service: AuthService = Depends(
+        get_auth_service
+    ),
+):
+    result = service.refresh_access_token(
+        raw_refresh_token=(
+            request.refresh_token
+        )
     )
 
     return success_response(result)

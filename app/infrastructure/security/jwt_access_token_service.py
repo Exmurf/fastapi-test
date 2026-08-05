@@ -2,9 +2,11 @@ from datetime import datetime, timedelta, timezone
 import uuid
 
 import jwt
+from jwt.exceptions import InvalidTokenError
 
 from app.application.security.access_token_service import (
     AccessTokenService,
+    AccessTokenPayload,
 )
 
 
@@ -40,6 +42,45 @@ class JWTAccessTokenService(AccessTokenService):
             payload,
             self._secret_key,
             algorithm= self._algorithm,
+        )
+
+    def decode_access_token(
+        self,
+        token: str,
+    ) -> AccessTokenPayload | None:
+        try:
+            payload = jwt.decode(
+                token,
+                self._secret_key,
+                algorithms = [self._algorithm],
+                options = {
+                    "require": [
+                        "sub",
+                        "type",
+                        "iat",
+                        "exp",
+                        "jti",
+                    ]
+                },
+            )
+        except InvalidTokenError:
+            return None
+
+        if payload.get("type") != "access":
+            return None
+
+        subject = payload.get("sub")
+        token_id = payload.get("jti")
+
+        if not isinstance(subject,str) or not subject:
+            return None
+
+        if not isinstance(token_id, str) or not token_id:
+            return None
+
+        return AccessTokenPayload(
+            subject=subject,
+            token_id=token_id,
         )
 
     @property

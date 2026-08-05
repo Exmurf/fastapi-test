@@ -52,6 +52,21 @@ class SQLAlchemyUserRepository(UserRepository):
 
         return self._to_entity(user_model)
 
+    def get_by_id(
+        self,
+        user_id: int,
+    ) -> User | None:
+        user_model = (
+            self.db.query(UserModel)
+            .filter(UserModel.id == user_id)
+            .first()
+        )
+
+        if user_model is None:
+            return None
+
+        return self._to_entity(user_model)
+        
     @staticmethod
     def _to_entity(
         user_model: UserModel,

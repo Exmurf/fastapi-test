@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
 from app.infrastructure.models.user_model import UserModel
+from app.infrastructure.models.refresh_token_model import RefreshTokenModel
 from app.presentation.routers.product_router import router as product_router
 from app.presentation.routers.auth_router import(
     router as auth_router,

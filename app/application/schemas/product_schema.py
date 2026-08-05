@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+from uuid import UUID
 
 class ProductCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -13,7 +14,7 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id:int
+    public_id: UUID
     name:str
     price:float
     stock:int
