@@ -5,6 +5,7 @@ from pydantic import (
     Field,
 )
 
+from app.domain.security.authorization import UserRole
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -20,6 +21,7 @@ class UserResponse(BaseModel):
 
     public_id: str
     email: EmailStr
+    role: UserRole
     is_active: bool
 
 class LoginResponse(BaseModel):

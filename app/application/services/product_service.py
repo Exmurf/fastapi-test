@@ -1,6 +1,12 @@
 from app.domain.entities.product import Product
 from app.domain.repositories.product_repository import ProductRepository
 from app.application.exceptions import NotFoundError, ValidationError
+from app.domain.security.authorization import (
+    Permission,
+    UserRole,
+    has_permission,
+)
+
 
 import math
 
@@ -37,6 +43,7 @@ class ProductService:
         self,
         page: int,
         owner_id: int,
+        role: UserRole,
         page_size: int,
         min_price: float | None = None,
         max_price: float | None = None,
@@ -79,8 +86,14 @@ class ProductService:
 
         offset = (page - 1) * page_size
 
+        can_read_all = has_permission(
+            role,
+            Permission.PRODUCT_READ_ALL,
+        )
+
         products, total_items = self.repository.get_all(
             owner_id=owner_id,
+            can_read_all=can_read_all,
             min_price=min_price,
             max_price=max_price,
             min_stock=min_stock,

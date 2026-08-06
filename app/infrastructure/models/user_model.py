@@ -1,9 +1,11 @@
 import uuid
 
 from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
+from app.domain.security.authorization import UserRole
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -32,6 +34,20 @@ class UserModel(Base):
     password_hash: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
+    )
+
+    role: Mapped[UserRole] = mapped_column(
+        SqlEnum(
+            UserRole,
+            native_enum=False,
+            length=20,
+            values_callable= lambda enum_class: [
+                role.value
+                for role in enum_class
+            ],
+        ),
+        nullable=False,
+        default=UserRole.USER,
     )
 
     is_active: Mapped[bool] = mapped_column(

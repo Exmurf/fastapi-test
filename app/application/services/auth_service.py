@@ -19,6 +19,7 @@ from app.domain.entities.refresh_token import RefreshToken
 from app.domain.repositories.refresh_token_repository import (
     RefreshTokenRepository,
 )
+from app.domain.security.authorization import UserRole
 
 from datetime import datetime, timezone
 
@@ -64,6 +65,7 @@ class AuthService:
             public_id=None,
             email=normalized_email,
             password_hash=password_hash,
+            role=UserRole.USER,
             is_active=True,
         )
 

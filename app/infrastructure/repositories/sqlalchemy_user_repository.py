@@ -13,6 +13,7 @@ class SQLAlchemyUserRepository(UserRepository):
         user_model = UserModel(
             email=user.email,
             password_hash=user.password_hash,
+            role=user.role,
             is_active=user.is_active,
         )
 
@@ -76,5 +77,6 @@ class SQLAlchemyUserRepository(UserRepository):
             public_id=user_model.public_id,
             email=user_model.email,
             password_hash=user_model.password_hash,
+            role=user_model.role,
             is_active=user_model.is_active,
         )

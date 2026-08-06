@@ -139,7 +139,8 @@ def get_all_products(
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
-        owner_id=get_current_user_id(current_user)
+        owner_id=get_current_user_id(current_user),
+        role=current_user.role,
     )
 
     return success_response(result)

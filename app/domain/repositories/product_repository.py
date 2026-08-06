@@ -11,6 +11,7 @@ class ProductRepository(ABC):
     def get_all(
         self,
         owner_id: int,
+        can_read_all: bool,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,

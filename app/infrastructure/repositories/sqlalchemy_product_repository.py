@@ -28,6 +28,7 @@ class SQLAlchemyProductRepository(ProductRepository):
     def get_all(
         self,
         owner_id: int,
+        can_read_all: bool,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,
@@ -41,9 +42,13 @@ class SQLAlchemyProductRepository(ProductRepository):
         query = self.db.query(ProductModel)
 
         query = query.filter(
-            ProductModel.owner_id == owner_id,
             ProductModel.is_deleted.is_(False)
         )
+
+        if not can_read_all:
+            query = query.filter(
+                ProductModel.owner_id == owner_id
+            )
 
         if search is not None:
             query = query.filter(
