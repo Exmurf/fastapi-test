@@ -28,6 +28,19 @@ from app.presentation.responses import (
 from app.infrastructure.repositories.sqlalchemy_product_detail_repository import (
     SQLAlchemyProductDetailRepository,
 )
+from app.presentation.dependencies.rate_limit_dependencies import (
+    PRODUCT_READ_LIMIT,
+    PRODUCT_READ_WINDOW_SECONDS,
+    PRODUCT_WRITE_LIMIT,
+    PRODUCT_WRITE_WINDOW_SECONDS,
+    user_rate_limit,
+)
+from app.application.services.activity_log_service import (
+    ActivityLogService,
+)
+from app.presentation.dependencies.activity_log_dependencies import (
+    get_activity_log_service,
+)
 
 
 
@@ -39,11 +52,15 @@ router = APIRouter(
 
 def get_product_service(
     db: Session = Depends(get_db),
+    activity_log_service: ActivityLogService = Depends(
+        get_activity_log_service
+    ),
 ) -> ProductService:
     repository = SQLAlchemyProductRepository(db)
     return ProductService(
         repository,
         detail_repository=SQLAlchemyProductDetailRepository(db),
+        activity_log_service=activity_log_service,
     )
 
 
@@ -64,6 +81,17 @@ def get_current_user_id(
     responses={
         400: {"model": ApiErrorResponse},
     },
+    dependencies=[
+        Depends(
+            user_rate_limit(
+                bucket="products_write",
+                limit=PRODUCT_WRITE_LIMIT,
+                window_seconds=(
+                    PRODUCT_WRITE_WINDOW_SECONDS
+                ),
+            )
+        ),
+    ],
 )
 def create_product(
     product_data: ProductCreate,
@@ -94,7 +122,10 @@ def create_product(
             if product_data.detail is not None
             else None
         ),
+        current_user=current_user,
     )
+
+
 
     return success_response(product)
 
@@ -103,6 +134,17 @@ def create_product(
     "",
     response_model=ApiResponse[PaginatedProductResponse],
     response_model_exclude_none=True,
+    dependencies=[
+        Depends(
+            user_rate_limit(
+                bucket="products_read",
+                limit=PRODUCT_READ_LIMIT,
+                window_seconds=(
+                    PRODUCT_READ_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def get_all_products(
     page: int = Query(
@@ -187,6 +229,17 @@ def get_all_products(
         401: {"model": ApiErrorResponse},
         404: {"model": ApiErrorResponse},
     },
+    dependencies=[
+        Depends(
+            user_rate_limit(
+                bucket="products_read",
+                limit=PRODUCT_READ_LIMIT,
+                window_seconds=(
+                    PRODUCT_READ_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def get_product_by_id(
     product_public_id: UUID,
@@ -210,6 +263,17 @@ def get_product_by_id(
         401: {"model": ApiErrorResponse},
         404: {"model": ApiErrorResponse},
     },
+    dependencies=[
+        Depends(
+            user_rate_limit(
+                bucket="products_write",
+                limit=PRODUCT_WRITE_LIMIT,
+                window_seconds=(
+                    PRODUCT_WRITE_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def update_product(
     product_public_id: UUID,
@@ -237,6 +301,17 @@ def update_product(
         401: {"model": ApiErrorResponse},
         404: {"model": ApiErrorResponse},
     },
+    dependencies=[
+        Depends(
+            user_rate_limit(
+                bucket="products_write",
+                limit=PRODUCT_WRITE_LIMIT,
+                window_seconds=(
+                    PRODUCT_WRITE_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def delete_product(
     product_public_id: UUID,

@@ -17,12 +17,16 @@ from app.presentation.routers.profile_router import (
 from app.presentation.routers.analytics_router import (
     router as analytics_router,
 )
+from app.presentation.routers.activity_log_router import (
+    router as activity_log_router,
+)
 from app.application.exceptions import (
     NotFoundError, 
     ValidationError,
     ConflictError,
     AuthenticationError,
     AuthorizationError,
+    RateLimitError,
 )
 from app.infrastructure.models.tag_model import TagModel
 from app.infrastructure.models.product_tag_model import product_tags
@@ -35,6 +39,26 @@ app = FastAPI(
     title= settings.app_name,
     debug = settings.debug,
 )
+
+@app.exception_handler(
+        RateLimitError
+)
+def rate_limit_error_handler(
+    request: Request,
+    exc: RateLimitError,
+):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "status": False,
+            "data": {},
+            "message": str(exc),
+            "errors": []
+        },
+        headers={
+            "Retry-After": str(exc.retry_after)
+        },
+    )
 
 @app.exception_handler(AuthenticationError)
 async def authentication_error_handler(
@@ -152,6 +176,7 @@ app.include_router(product_router)
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(analytics_router)
+app.include_router(activity_log_router)
 
 @app.get("/")
 def root():

@@ -1,0 +1,21 @@
+from enum import Enum
+
+
+class ActivityAction(str, Enum):
+    PRODUCT_CREATE = "PRODUCT_CREATE"
+    PRODUCT_UPDATE = "PRODUCT_UPDATE"
+    PRODUCT_DELETE = "PRODUCT_DELETE"
+
+    PROFILE_UPDATE = "PROFILE_UPDATE"
+
+    USER_REGISTER = "USER_REGISTER"
+
+    AUTH_LOGIN = "AUTH_LOGIN"
+    AUTH_LOGOUT = "AUTH_LOGOUT"
+
+
+class ActivityEntityType(str, Enum):
+    PRODUCT = "PRODUCT"
+    TAG = "TAG"
+    USER = "USER"
+    PROFILE = "PROFILE"

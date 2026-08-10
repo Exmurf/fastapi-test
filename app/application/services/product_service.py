@@ -22,6 +22,13 @@ from app.domain.entities.product_detail import (
 from app.domain.repositories.product_detail_repository import (
     ProductDetailRepository,
 )
+from app.application.services.activity_log_service import (
+    ActivityLogService,
+)
+from app.domain.activity_log_types import (
+    ActivityAction,
+    ActivityEntityType,
+)
 
 from uuid import UUID
 import math
@@ -31,9 +38,12 @@ class ProductService:
         self, 
         repository: ProductRepository,
         detail_repository: ProductDetailRepository,
+        activity_log_service: ActivityLogService,
     ):
         self.repository = repository
         self.detail_repository = detail_repository
+        self.activity_log_service = activity_log_service
+
 
     def create_product(
             self,
@@ -45,6 +55,7 @@ class ProductService:
             detail_description: str | None,
             detail_brand: str | None,
             detail_warranty_months: int | None,
+            current_user: User,
     ) -> Product:
         if not name.strip():
             raise ValidationError("Urun adi bos olamaz")
@@ -92,6 +103,15 @@ class ProductService:
             self.detail_repository.create(
                 detail
             )
+
+        self.activity_log_service.log(
+            user=current_user,
+            action=ActivityAction.PRODUCT_CREATE,
+            entity_type=ActivityEntityType.PRODUCT,
+            entity_id=created_product.public_id,
+            old_value=None,
+            new_value=created_product,
+        )
 
         return self.repository.get_by_public_id(
             public_id=created_product.public_id,
@@ -352,6 +372,21 @@ class ProductService:
                 "Urun bulunamadi"
             )
 
+        self.activity_log_service.log(
+            user=current_user,
+            action=(
+                ActivityAction.PRODUCT_UPDATE
+            ),
+            entity_type=(
+                ActivityEntityType.PRODUCT
+            ),
+            entity_id=(
+                updated_product.public_id
+            ),
+            old_value=existing_product,
+            new_value=updated_product,
+        )
+
         return updated_product
 
     def delete_product(
@@ -380,6 +415,15 @@ class ProductService:
 
         if not deleted:
             raise NotFoundError("Urun silinemedi")
+
+        self.activity_log_service.log(
+            user=current_user,
+            action=ActivityAction.PRODUCT_DELETE,
+            entity_type=ActivityEntityType.PRODUCT,
+            entity_id=product.public_id,
+            old_value=product,
+            new_value=None,
+        )
 
         return True
 

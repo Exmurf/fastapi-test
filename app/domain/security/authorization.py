@@ -23,6 +23,9 @@ class Permission(str, Enum):
     ANALYTICS_READ_OWN = "analytics:read:own"
     ANALYTICS_READ_ALL = "analytics:read:all"
 
+    ACTIVITY_READ_OWN = "activity_read_own"
+    ACTIVITY_READ_ALL = "activity_read_all"
+
 ROLE_PERMISSIONS: dict[
     UserRole,
     set[Permission],
@@ -36,6 +39,8 @@ ROLE_PERMISSIONS: dict[
         Permission.PROFILE_UPDATE_OWN,
 
         Permission.ANALYTICS_READ_OWN,
+
+        Permission.ACTIVITY_READ_OWN,
     },
 
     UserRole.ADMIN: {
@@ -53,6 +58,9 @@ ROLE_PERMISSIONS: dict[
 
         Permission.ANALYTICS_READ_OWN,
         Permission.ANALYTICS_READ_ALL,
+
+        Permission.ACTIVITY_READ_OWN,
+        Permission.ACTIVITY_READ_ALL,
     },
 }
 

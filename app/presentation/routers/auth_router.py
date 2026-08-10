@@ -63,6 +63,16 @@ from app.presentation.dependencies.auth_dependencies import (
 from app.domain.repositories.profile_repository import (
     ProfileRepository,
 )
+from app.presentation.dependencies.rate_limit_dependencies import (
+    LOGIN_LIMIT,
+    LOGIN_WINDOW_SECONDS,
+    REGISTER_LIMIT,
+    REGISTER_WINDOW_SECONDS,
+    ip_rate_limit,
+)
+
+
+
 
 router = APIRouter(
     prefix="/auth",
@@ -104,6 +114,17 @@ def get_auth_service(
     "/register",
     status_code= status.HTTP_201_CREATED,
     response_model=ApiResponse[UserResponse],
+    dependencies=[
+        Depends(
+            ip_rate_limit(
+                bucket="register",
+                limit=REGISTER_LIMIT,
+                window_seconds=(
+                    REGISTER_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def register(
     request: RegisterRequest,
@@ -121,6 +142,17 @@ def register(
 @router.post(
     "/login",
     response_model=ApiResponse[LoginResponse],
+    dependencies=[
+        Depends(
+            ip_rate_limit(
+                bucket="login",
+                limit=LOGIN_LIMIT,
+                window_seconds=(
+                    LOGIN_WINDOW_SECONDS
+                ),
+            )
+        )
+    ],
 )
 def login(
     request: LoginRequest,
