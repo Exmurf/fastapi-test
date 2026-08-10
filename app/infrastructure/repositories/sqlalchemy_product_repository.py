@@ -2,7 +2,24 @@ from sqlalchemy.orm import Session
 
 from app.domain.entities.product import Product
 from app.domain.repositories.product_repository import ProductRepository
-from app.infrastructure.models.product_model import ProductModel
+from app.infrastructure.models.product_model import (
+    ProductModel,
+)
+from app.domain.read_models.product_with_owner import (
+    ProductWithOwner,
+)
+from app.infrastructure.models.user_model import (
+    UserModel,
+)
+from app.infrastructure.models.profile_model import (
+    ProfileModel,
+)
+from app.infrastructure.models.tag_model import TagModel
+from app.domain.entities.product_detail import (
+    ProductDetail,
+)
+
+
 
 class SQLAlchemyProductRepository(ProductRepository):
     def __init__(self, db: Session):
@@ -19,6 +36,12 @@ class SQLAlchemyProductRepository(ProductRepository):
             stock = product.stock,
         )
 
+        product_model.tags = (
+            self._get_tag_models(
+                product.tags
+            )
+        )
+
         self.db.add(product_model)
         self.db.commit()
         self.db.refresh(product_model)
@@ -27,8 +50,7 @@ class SQLAlchemyProductRepository(ProductRepository):
 
     def get_all(
         self,
-        owner_id: int,
-        can_read_all: bool,
+        owner_public_id: str | None,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,
@@ -39,16 +61,31 @@ class SQLAlchemyProductRepository(ProductRepository):
         limit: int = 10,
     ) -> tuple[list[Product], int]:
 
-        query = self.db.query(ProductModel)
-
-        query = query.filter(
-            ProductModel.is_deleted.is_(False)
+        query = (
+            self.db.query(
+                ProductModel,
+                UserModel,
+                ProfileModel,
+            )
+            .join(
+                UserModel,
+                ProductModel.owner_id == UserModel.id,
+            )
+            .outerjoin(
+                ProfileModel,
+                ProfileModel.user_id == UserModel.id,
+            )
+            .filter(
+                ProductModel.is_deleted.is_(False)
+            )
         )
 
-        if not can_read_all:
+        if owner_public_id is not None:
             query = query.filter(
-                ProductModel.owner_id == owner_id
+                UserModel.public_id
+                == owner_public_id
             )
+        
 
         if search is not None:
             query = query.filter(
@@ -90,29 +127,63 @@ class SQLAlchemyProductRepository(ProductRepository):
                 ProductModel.id.asc(),
             )
 
-        product_models = (
+        rows = (
             query
             .offset(offset)
             .limit(limit)
             .all()
         )
 
-        products = [
-            self._to_entity(product_model)
-            for product_model in product_models
-        ]
+        products_with_owners = []
 
-        return products, total_items
+        for (
+            product_model, 
+            user_model,
+            profile_model,
+        ) in rows:
+            products_with_owners.append(
+                ProductWithOwner(
+                    product=self._to_entity(
+                        product_model
+                    ),
+                    owner_public_id=(
+                        user_model.public_id
+                    ),
+                    owner_first_name=(
+                        profile_model.first_name
+                        if profile_model is not None
+                        else None
+                    ),
+                    owner_last_name=(
+                        profile_model.last_name
+                        if profile_model is not None
+                        else None
+                    ),
+                    owner_email=user_model.email,
+                )
+            )
+
+        return products_with_owners, total_items
 
     def get_by_public_id(
         self,
         public_id: str,
-        owner_id: int,
+        owner_id: int | None,
     ) -> Product | None:
-        product_model = self._get_active_model(
-            public_id=public_id,
-            owner_id=owner_id,
+        query = (
+            self.db.query(ProductModel)
+            .filter(
+                ProductModel.public_id == public_id,
+                ProductModel.is_deleted.is_(False),
+            )
         )
+
+        if owner_id is not None:
+            query = query.filter(
+                ProductModel.owner_id == owner_id
+            )
+
+        product_model = query.first()
 
         if product_model is None:
             return None
@@ -121,15 +192,20 @@ class SQLAlchemyProductRepository(ProductRepository):
 
     def update(
         self,
-        product: Product
+        product: Product,
     ) -> Product | None:
-        if product.id is None:
-            return None
-
-        product_model = self._get_active_model(
-            public_id = product.public_id,
-            owner_id = product.owner_id,
+        query = (
+            self.db.query(ProductModel)
+            .filter(
+                ProductModel.public_id
+                == product.public_id,
+                ProductModel.is_deleted.is_(False),
+            )
         )
+
+    
+
+        product_model = query.first()
 
         if product_model is None:
             return None
@@ -137,6 +213,12 @@ class SQLAlchemyProductRepository(ProductRepository):
         product_model.name = product.name
         product_model.price = product.price
         product_model.stock = product.stock
+
+        product_model.tags = (
+            self._get_tag_models(
+                product.tags
+            )
+        )
 
         self.db.commit()
         self.db.refresh(product_model)
@@ -146,12 +228,22 @@ class SQLAlchemyProductRepository(ProductRepository):
     def delete(
         self, 
         public_id: str,
-        owner_id: int,
+        owner_id: int | None,
     ) -> bool:
-        product_model = self._get_active_model(
-            public_id=public_id,
-            owner_id=owner_id,
+        query = (
+            self.db.query(ProductModel)
+            .filter(
+                ProductModel.public_id == public_id,
+                ProductModel.is_deleted.is_(False),
+            )
         )
+
+        if owner_id is not None:
+            query = query.filter(
+                ProductModel.owner_id == owner_id
+            )
+
+        product_model = query.first()
 
         if product_model is None:
             return False
@@ -188,7 +280,51 @@ class SQLAlchemyProductRepository(ProductRepository):
             name = product_model.name,
             price = product_model.price,
             stock = product_model.stock,
+            created_at = product_model.created_at,
+            tags=[
+                tag_model.name
+                for tag_model
+                in product_model.tags
+            ],
+            detail = (
+                ProductDetail(
+                    id=product_model.detail.id,
+                    product_id=product_model.detail.product_id,
+                    description=product_model.detail.description,
+                    brand=product_model.detail.brand,
+                    warranty_months=product_model.detail.warranty_months,
+                )
+                if product_model.detail is not None
+                else None
+            ),
         )
 
+    def _get_tag_models(
+        self,
+        tag_names: list[str],
+    ) -> list[TagModel]:
+        tag_models = []
 
-    
+        for tag_name in tag_names:
+            tag_model = (
+                self.db.query(TagModel)
+                .filter(
+                    TagModel.name
+                    == tag_name
+                )
+                .first()
+            )
+
+            if tag_model is None:
+                tag_model = TagModel(
+                    name=tag_name
+                )
+
+                self.db.add(tag_model)
+
+            tag_models.append(tag_model)
+
+        return tag_models
+
+
+        

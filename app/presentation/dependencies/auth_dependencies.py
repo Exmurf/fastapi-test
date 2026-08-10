@@ -41,6 +41,12 @@ from app.infrastructure.repositories.sqlalchemy_refresh_token_repository import 
 from app.infrastructure.security.opaque_refresh_token_service import (
     OpaqueRefreshTokenService,
 )
+from app.domain.repositories.profile_repository import (
+    ProfileRepository,
+)
+from app.infrastructure.repositories.sqlalchemy_profile_repository import (
+    SQLAlchemyProfileRepository,
+)
 
 
 password_hasher = Argon2PasswordHasher()
@@ -73,6 +79,11 @@ def get_password_hasher() -> PasswordHasher:
 
 def get_access_token_service() -> AccessTokenService:
     return access_token_service
+
+def get_profile_repository(
+        db: Session = Depends(get_db),
+) -> ProfileRepository:
+    return SQLAlchemyProfileRepository(db)
 
 def get_current_user(
         credentials: (

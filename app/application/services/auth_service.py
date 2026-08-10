@@ -20,6 +20,11 @@ from app.domain.repositories.refresh_token_repository import (
     RefreshTokenRepository,
 )
 from app.domain.security.authorization import UserRole
+from app.domain.entities.profile import Profile
+from app.domain.repositories.profile_repository import (
+    ProfileRepository,
+)
+
 
 from datetime import datetime, timezone
 
@@ -27,12 +32,14 @@ class AuthService:
     def __init__(
         self,
         user_repository: UserRepository,
+        profile_repository: ProfileRepository,
         password_hasher: PasswordHasher,
         access_token_service: AccessTokenService,
         refresh_token_repository: RefreshTokenRepository,
         refresh_token_service: RefreshTokenService,
     ):
         self.user_repository = user_repository
+        self.profile_repository = profile_repository
         self.password_hasher = password_hasher
         self.access_token_service = access_token_service
         self.refresh_token_repository = refresh_token_repository
@@ -69,7 +76,24 @@ class AuthService:
             is_active=True,
         )
 
-        return self.user_repository.create(user)
+        created_user = self.user_repository.create(user)
+
+        if created_user.id is None:
+            raise RuntimeError(
+                "Olusturulan kullanicinin internal ID degeri bulunamadi"
+            )
+
+        profile = Profile(
+            id=None,
+            user_id=created_user.id,
+            first_name=None,
+            last_name=None,
+            bio=None,
+        )
+
+        self.profile_repository.create(profile)
+
+        return created_user
 
     def login(
         self,

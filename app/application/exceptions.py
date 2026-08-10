@@ -12,3 +12,6 @@ class ConflictError(ApplicationError):
 
 class AuthenticationError(ApplicationError):
     pass
+
+class AuthorizationError(Exception):
+    pass

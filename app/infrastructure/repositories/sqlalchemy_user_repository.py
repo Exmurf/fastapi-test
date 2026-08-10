@@ -79,4 +79,5 @@ class SQLAlchemyUserRepository(UserRepository):
             password_hash=user_model.password_hash,
             role=user_model.role,
             is_active=user_model.is_active,
+            created_at=user_model.created_at,
         )

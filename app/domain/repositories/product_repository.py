@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 from app.domain.entities.product import Product
+from app.domain.read_models.product_with_owner import (
+    ProductWithOwner,
+)
 
 class ProductRepository(ABC):
 
@@ -10,8 +13,7 @@ class ProductRepository(ABC):
     @abstractmethod
     def get_all(
         self,
-        owner_id: int,
-        can_read_all: bool,
+        owner_public_id: str | None,
         min_price: float | None = None,
         max_price: float | None = None,
         min_stock: int | None = None,
@@ -20,14 +22,14 @@ class ProductRepository(ABC):
         sort_order: str = "asc",
         offset: int = 0,
         limit: int = 10,
-    ) -> tuple[list[Product], int]:
+    ) -> tuple[list[ProductWithOwner], int]:
         pass
 
     @abstractmethod
     def get_by_public_id(
         self, 
         public_id: str,
-        owner_id: int,
+        owner_id: int | None,
 
     ) -> Product | None:
         pass
@@ -40,6 +42,6 @@ class ProductRepository(ABC):
     def delete(
         self, 
         public_id: str,
-        owner_id: int,
+        owner_id: int | None,
     ) -> bool:
         pass

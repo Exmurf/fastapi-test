@@ -1,8 +1,10 @@
 import uuid
 
-from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Boolean, Integer, String, DateTime
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+
 
 from app.infrastructure.database import Base
 from app.domain.security.authorization import UserRole
@@ -55,3 +57,9 @@ class UserModel(Base):
         nullable=False,
         default=True,
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now,
+    )   

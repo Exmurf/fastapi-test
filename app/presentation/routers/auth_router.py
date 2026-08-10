@@ -47,6 +47,7 @@ from app.presentation.dependencies.auth_dependencies import (
     get_current_user,
     get_password_hasher,
     get_user_repository,
+    get_profile_repository,
 )
 from app.domain.entities.user import User
 from app.application.security.refresh_token_service import (
@@ -59,6 +60,9 @@ from app.presentation.dependencies.auth_dependencies import (
     get_refresh_token_repository,
     get_refresh_token_service,
 )
+from app.domain.repositories.profile_repository import (
+    ProfileRepository,
+)
 
 router = APIRouter(
     prefix="/auth",
@@ -69,6 +73,9 @@ router = APIRouter(
 def get_auth_service(
         user_repository: UserRepository = Depends(
             get_user_repository
+        ),
+        profile_repository: ProfileRepository = Depends(
+            get_profile_repository
         ),
         password_hasher: PasswordHasher = Depends(
             get_password_hasher
@@ -85,6 +92,7 @@ def get_auth_service(
 ) -> AuthService:
     return AuthService(
         user_repository=user_repository,
+        profile_repository=profile_repository,
         password_hasher=password_hasher,
         access_token_service=access_token_service,
         refresh_token_repository=refresh_token_repository,

@@ -4,8 +4,11 @@ from sqlalchemy import (
     String, 
     Boolean,
     ForeignKey,
+    DateTime,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
+
 
 import uuid
 from app.infrastructure.database import Base
@@ -54,3 +57,21 @@ class ProductModel(Base):
         nullable=False,
         default=False,
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now,
+    )
+
+    detail = relationship(
+        "ProductDetailModel",
+        back_populates="product",
+        uselist=False,
+    )
+
+    tags = relationship(
+            "TagModel",
+            secondary="product_tags",
+            back_populates="products",
+        )

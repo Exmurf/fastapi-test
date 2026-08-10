@@ -6,16 +6,27 @@ from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
 from app.infrastructure.models.user_model import UserModel
 from app.infrastructure.models.refresh_token_model import RefreshTokenModel
+from app.infrastructure.models.profile_model import ProfileModel
 from app.presentation.routers.product_router import router as product_router
 from app.presentation.routers.auth_router import(
     router as auth_router,
+)
+from app.presentation.routers.profile_router import (
+    router as profile_router
+)
+from app.presentation.routers.analytics_router import (
+    router as analytics_router,
 )
 from app.application.exceptions import (
     NotFoundError, 
     ValidationError,
     ConflictError,
     AuthenticationError,
+    AuthorizationError,
 )
+from app.infrastructure.models.tag_model import TagModel
+from app.infrastructure.models.product_tag_model import product_tags
+from app.infrastructure.models.product_detail_model import ProductDetailModel
 from app.config import settings
 
 Base.metadata.create_all(bind=engine)
@@ -36,6 +47,24 @@ async def authentication_error_handler(
             "status": False,
             "data": {},
             "message": str(error),
+            "errors": None,
+        },
+        headers={
+            "WWW-Authenticate": "Bearer",
+        }
+    )
+
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(
+    request: Request,
+    exc: AuthorizationError,
+):
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={
+            "status": False,
+            "data": {},
+            "message": str(exc),
             "errors": None,
         },
         headers={
@@ -121,6 +150,8 @@ async def request_validation_exception_handler(
 
 app.include_router(product_router)
 app.include_router(auth_router)
+app.include_router(profile_router)
+app.include_router(analytics_router)
 
 @app.get("/")
 def root():

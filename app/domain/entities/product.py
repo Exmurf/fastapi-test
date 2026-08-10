@@ -1,4 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
+
+from app.domain.entities.product_detail import ProductDetail
+
 
 @dataclass
 class Product:
@@ -8,3 +12,8 @@ class Product:
     name: str
     price: float
     stock: int
+    created_at: datetime | None = None
+    tags: list[str] = field(
+        default_factory=list
+    )
+    detail: ProductDetail | None = None
