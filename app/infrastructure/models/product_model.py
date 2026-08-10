@@ -75,3 +75,10 @@ class ProductModel(Base):
             secondary="product_tags",
             back_populates="products",
         )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now,
+        onupdate=datetime.now,
+    )

@@ -17,3 +17,4 @@ class Product:
         default_factory=list
     )
     detail: ProductDetail | None = None
+    updated_at: datetime | None = None

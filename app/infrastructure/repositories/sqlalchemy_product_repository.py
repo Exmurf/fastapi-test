@@ -297,6 +297,7 @@ class SQLAlchemyProductRepository(ProductRepository):
                 if product_model.detail is not None
                 else None
             ),
+            updated_at=product_model.updated_at,
         )
 
     def _get_tag_models(

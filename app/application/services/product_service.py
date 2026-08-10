@@ -283,9 +283,6 @@ class ProductService:
                 "Stok negatif olamaz"
             )
 
-        normalized_tags = self._normalize_tags(
-            tags
-        )
 
         owner_id = self._resolve_owner_id(
             current_user=current_user,
@@ -304,6 +301,13 @@ class ProductService:
 
         if existing_product is None:
             raise NotFoundError("Urun bulunamadi")
+
+
+        normalized_tags = (
+                    self._normalize_tags(tags)
+                    if tags is not None
+                    else existing_product.tags
+        )
 
         product = Product(
             id=existing_product.id,
