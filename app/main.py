@@ -31,13 +31,23 @@ from app.application.exceptions import (
 from app.infrastructure.models.tag_model import TagModel
 from app.infrastructure.models.product_tag_model import product_tags
 from app.infrastructure.models.product_detail_model import ProductDetailModel
+from app.presentation.middleware.error_logging_middleware import (
+    ErrorLoggingMiddleware,
+)
 from app.config import settings
+
+
+
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title= settings.app_name,
     debug = settings.debug,
+)
+
+app.add_middleware(
+    ErrorLoggingMiddleware
 )
 
 @app.exception_handler(
