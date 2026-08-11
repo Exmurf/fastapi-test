@@ -325,6 +325,19 @@ class AuthService:
                 "Refresh token zaten iptal edilmis"
             )
 
+        user = self.user_repository.get_by_id(
+            refresh_token.user_id
+        )
+
+        if (
+            user is None
+            or user.id is None
+            or user.public_id is None
+        ):
+            raise AuthenticationError(
+                "Kullanici bulunamadi"
+            )
+
         revoked = (
             self.refresh_token_repository.revoke(
                 token_hash
@@ -337,10 +350,10 @@ class AuthService:
             )
 
         self.activity_log_service.log(
-            user=current_user,
+            user=user,
             action=ActivityAction.AUTH_LOGOUT,
             entity_type=ActivityEntityType.USER,
-            entity_id=current_user.public_id,
+            entity_id=user.public_id,
             old_value=None,
             new_value=None,
         )

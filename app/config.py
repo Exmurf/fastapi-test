@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Product CRUD API"
     database_url: str
+    redis_url: str
     debug: bool = False
 
     jwt_secret_key: SecretStr
@@ -14,6 +15,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
 
     refresh_token_expire_days: int = 30
+
+    product_cache_ttl_seconds: int = 300
 
     login_limit: int = 5
     login_window_seconds: int = 60

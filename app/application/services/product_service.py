@@ -29,21 +29,25 @@ from app.domain.activity_log_types import (
     ActivityAction,
     ActivityEntityType,
 )
+from app.domain.repositories.product_cache_repository import (
+    ProductCacheRepository,
+)
 
 from uuid import UUID
 import math
 
 class ProductService:
     def __init__(
-        self, 
+        self,
         repository: ProductRepository,
         detail_repository: ProductDetailRepository,
         activity_log_service: ActivityLogService,
+        cache_repository: ProductCacheRepository,
     ):
         self.repository = repository
         self.detail_repository = detail_repository
         self.activity_log_service = activity_log_service
-
+        self.cache_repository = cache_repository
 
     def create_product(
             self,
@@ -259,7 +263,7 @@ class ProductService:
         }
 
     def get_product_by_id(
-        self, 
+        self,
         public_id: str,
         current_user: User,
     ) -> Product:
@@ -269,16 +273,35 @@ class ProductService:
             all_permission=Permission.PRODUCT_READ_ALL,
         )
 
+        cached_product = (
+            self.cache_repository.get(
+                public_id
+            )
+        )
+
+        if cached_product is not None:
+            if (
+                owner_id is None
+                or cached_product.owner_id == owner_id
+            ):
+                return cached_product
+
         product = self.repository.get_by_public_id(
             public_id=public_id,
             owner_id=owner_id,
         )
-        
+
         if product is None:
-            raise NotFoundError("Urun bulunamadi")
+            raise NotFoundError(
+                "Urun bulunamadi"
+            )
+
+        self.cache_repository.set(
+            product
+        )
 
         return product
-
+    
     def update_product(
         self,
         public_id: str,
@@ -372,6 +395,10 @@ class ProductService:
                 "Urun bulunamadi"
             )
 
+        self.cache_repository.invalidate(
+            public_id
+        )
+
         self.activity_log_service.log(
             user=current_user,
             action=(
@@ -415,6 +442,10 @@ class ProductService:
 
         if not deleted:
             raise NotFoundError("Urun silinemedi")
+
+        self.cache_repository.invalidate(
+            public_id
+        )
 
         self.activity_log_service.log(
             user=current_user,

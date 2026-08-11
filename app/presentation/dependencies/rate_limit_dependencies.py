@@ -1,9 +1,9 @@
 import time
-from collections import defaultdict, deque
-from threading import Lock
+import uuid
 
 from fastapi import Depends, Request
 
+from app.infrastructure.redis_client import redis_client
 from app.application.exceptions import RateLimitError
 from app.domain.entities.user import User
 from app.presentation.dependencies.auth_dependencies import (
@@ -29,46 +29,103 @@ PRODUCT_WRITE_WINDOW_SECONDS = (
 )
 
 
-_requests: dict[
-    str,
-    deque[float],
-] = defaultdict(deque)
+RATE_LIMIT_SCRIPT = redis_client.register_script(
+    """
+    local key = KEYS[1]
 
-_lock = Lock()
+    local now = tonumber(ARGV[1])
+    local window_start = tonumber(ARGV[2])
+    local window_seconds = tonumber(ARGV[3])
+    local limit = tonumber(ARGV[4])
+    local member = ARGV[5]
+
+    redis.call(
+        "ZREMRANGEBYSCORE",
+        key,
+        "-inf",
+        window_start
+    )
+
+    local request_count = redis.call(
+        "ZCARD",
+        key
+    )
+
+    if request_count >= limit then
+        local oldest = redis.call(
+            "ZRANGE",
+            key,
+            0,
+            0,
+            "WITHSCORES"
+        )
+
+        local retry_after = math.ceil(
+            tonumber(oldest[2])
+            + window_seconds
+            - now
+        )
+
+        if retry_after < 1 then
+            retry_after = 1
+        end
+
+        return {
+            0,
+            retry_after
+        }
+    end
+
+    redis.call(
+        "ZADD",
+        key,
+        now,
+        member
+    )
+
+    redis.call(
+        "EXPIRE",
+        key,
+        window_seconds + 1
+    )
+
+    return {
+        1,
+        0
+    }
+    """
+)
 
 def _check_rate_limit(
     key: str,
     limit: int,
     window_seconds: int,
 ) -> None:
-    now = time.monotonic()
+    now = time.time()
     window_start = now - window_seconds
 
-    with _lock:
-        timestamps = _requests[key]
+    member = uuid.uuid4().hex
 
-        while(
-            timestamps
-            and timestamps[0] <= window_start
-        ):
-            timestamps.popleft()
+    result = RATE_LIMIT_SCRIPT(
+        keys=[key],
+        args=[
+            now,
+            window_start,
+            window_seconds,
+            limit,
+            member,
+        ],
+    )
 
-        if len(timestamps) >= limit:
-            retry_after = int(
-                timestamps[0]
-                + window_seconds
-                - now
-            ) + 1
+    allowed = result[0] == 1
 
-            raise RateLimitError(
-                message=(
-                    "Cok fazla istek gonderildi"
-                ),
-                retry_after=retry_after,
-            )
+    if not allowed:
+        retry_after = int(result[1])
 
-        timestamps.append(now)
-
+        raise RateLimitError(
+            message="Cok fazla istek gonderildi",
+            retry_after=retry_after,
+        )
 
 def ip_rate_limit(
         bucket: str,
