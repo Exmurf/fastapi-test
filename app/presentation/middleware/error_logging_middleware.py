@@ -76,7 +76,7 @@ class ErrorLoggingMiddleware(
                 body=body,
                 duration_ms=duration_ms,
                 error=(
-                    f"{tpye(exc).__name__}: "
+                    f"{type(exc).__name__}: "
                     f"{exc}"
                 ),
             )
