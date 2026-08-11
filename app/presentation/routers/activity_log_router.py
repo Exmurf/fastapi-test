@@ -13,6 +13,11 @@ from app.infrastructure.repositories.sqlalchemy_user_repository import (
 )
 from app.presentation.dependencies.auth_dependencies import get_current_user
 from app.presentation.responses import success_response
+from app.domain.activity_log_types import (
+    ActivityAction,
+    ActivityEntityType,
+)
+
 
 
 router = APIRouter(
@@ -61,6 +66,15 @@ def get_my_activity_logs(
         ge=1,
         le=100,
     ),
+    action: ActivityAction | None = Query(
+        default=None
+    ),
+    entity_type: ActivityEntityType | None = Query(
+        default=None
+    ),
+    entity_id: str | None = Query(
+        default=None
+    ),
     current_user: User = Depends(
         get_current_user
     ),
@@ -76,6 +90,9 @@ def get_my_activity_logs(
         current_user=current_user,
         page=page,
         page_size=page_size,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
     )
 
     return serialize_logs(
@@ -89,6 +106,15 @@ def get_my_activity_logs(
 @router.get("")
 def get_activity_logs(
     user_public_id: str | None = Query(
+        default=None
+    ),
+    action: ActivityAction | None = Query(
+        default=None
+    ),
+    entity_type: ActivityEntityType | None = Query(
+        default=None
+    ),
+    entity_id: str | None = Query(
         default=None
     ),
     page: int = Query(default=1, ge=1),
@@ -131,6 +157,9 @@ def get_activity_logs(
         target_user=target_user,
         page=page,
         page_size=page_size,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
     )
 
     return serialize_logs(

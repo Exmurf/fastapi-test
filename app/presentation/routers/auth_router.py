@@ -70,6 +70,12 @@ from app.presentation.dependencies.rate_limit_dependencies import (
     REGISTER_WINDOW_SECONDS,
     ip_rate_limit,
 )
+from app.application.services.activity_log_service import (
+    ActivityLogService,
+)
+from app.presentation.dependencies.activity_log_dependencies import (
+    get_activity_log_service,
+)
 
 
 
@@ -99,6 +105,9 @@ def get_auth_service(
         refresh_token_service: RefreshTokenService = Depends(
             get_refresh_token_service
         ),
+        activity_log_service: ActivityLogService = Depends(
+            get_activity_log_service
+        ),
 ) -> AuthService:
     return AuthService(
         user_repository=user_repository,
@@ -107,6 +116,7 @@ def get_auth_service(
         access_token_service=access_token_service,
         refresh_token_repository=refresh_token_repository,
         refresh_token_service=refresh_token_service,
+        activity_log_service=activity_log_service,
     )
 
 

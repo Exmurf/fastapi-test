@@ -38,7 +38,7 @@ INTERNAL_FIELDS = {
     "owner_id",
     "product_id",
     "tag_id",
-    "updated_at",
+    "updated_at"
 }
 
 class ActivityLogService:
@@ -115,6 +115,9 @@ class ActivityLogService:
         page: int,
         page_size: int,
         target_user: User | None = None,
+        action: ActivityAction | None = None,
+        entity_type: ActivityEntityType | None = None,
+        entity_id: str | None = None,
     ) -> tuple[list[ActivityLog], int]:
 
         if not has_permission(
@@ -139,6 +142,9 @@ class ActivityLogService:
             user_id=user_id,
             page=page,
             page_size=page_size,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
         )
 
     def get_my_logs(
@@ -146,6 +152,9 @@ class ActivityLogService:
         current_user: User,
         page: int,
         page_size: int,
+        action: ActivityAction | None = None,
+        entity_type: ActivityEntityType | None = None,
+        entity_id: str | None = None,
     ) -> tuple[list[ActivityLog], int]:
 
         if current_user.id is None:
@@ -157,6 +166,9 @@ class ActivityLogService:
             user_id=current_user.id,
             page=page,
             page_size=page_size,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
         )
 
     @classmethod

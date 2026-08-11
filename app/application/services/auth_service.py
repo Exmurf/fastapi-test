@@ -24,6 +24,11 @@ from app.domain.entities.profile import Profile
 from app.domain.repositories.profile_repository import (
     ProfileRepository,
 )
+from app.application.services.activity_log_service import ActivityLogService
+from app.domain.activity_log_types import (
+    ActivityAction,
+    ActivityEntityType,
+)
 
 
 from datetime import datetime, timezone
@@ -37,6 +42,7 @@ class AuthService:
         access_token_service: AccessTokenService,
         refresh_token_repository: RefreshTokenRepository,
         refresh_token_service: RefreshTokenService,
+        activity_log_service: ActivityLogService,
     ):
         self.user_repository = user_repository
         self.profile_repository = profile_repository
@@ -44,6 +50,7 @@ class AuthService:
         self.access_token_service = access_token_service
         self.refresh_token_repository = refresh_token_repository
         self.refresh_token_service = refresh_token_service
+        self.activity_log_service = activity_log_service
 
     def register(
         self,
@@ -92,6 +99,15 @@ class AuthService:
         )
 
         self.profile_repository.create(profile)
+
+        self.activity_log_service.log(
+            user=created_user,
+            action=ActivityAction.USER_REGISTER,
+            entity_type=ActivityEntityType.USER,
+            entity_id=created_user.public_id,
+            old_value=None,
+            new_value=None,
+        )
 
         return created_user
 
@@ -157,6 +173,15 @@ class AuthService:
 
         self.refresh_token_repository.create(
             refresh_token
+        )
+
+        self.activity_log_service.log(
+            user=user,
+            action=ActivityAction.AUTH_LOGIN,
+            entity_type=ActivityEntityType.USER,
+            entity_id=user.public_id,
+            old_value=None,
+            new_value=None,
         )
 
         return {
@@ -310,5 +335,14 @@ class AuthService:
             raise AuthenticationError(
                 "Refresh token iptal edilemedi"
             )
+
+        self.activity_log_service.log(
+            user=current_user,
+            action=ActivityAction.AUTH_LOGOUT,
+            entity_type=ActivityEntityType.USER,
+            entity_id=current_user.public_id,
+            old_value=None,
+            new_value=None,
+        )
 
         return True

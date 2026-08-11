@@ -57,6 +57,9 @@ class SQLAlchemyActivityLogRepository(
         user_id: int | None,
         page: int,
         page_size: int,
+        action: ActivityAction | None = None,
+        entity_type: ActivityEntityType | None = None,
+        entity_id: str | None = None,
     ) -> tuple[list[ActivityLog], int]:
 
         query = self.db.query(
@@ -71,6 +74,22 @@ class SQLAlchemyActivityLogRepository(
             query = query.filter(
                 ActivityLogModel.user_id
                 == user_id
+            )
+
+        if action is not None:
+            query = query.filter(
+                ActivityLogModel.action == action.value
+            )
+
+        if entity_type is not None:
+            query = query.filter(
+                ActivityLogModel.entity_type
+                == entity_type.value
+            )
+
+        if entity_id is not None:
+            query = query.filter(
+                ActivityLogModel.entity_id == entity_id
             )
 
         total_items = query.count()
