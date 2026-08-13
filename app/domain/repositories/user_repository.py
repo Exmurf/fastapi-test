@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
 
 from app.domain.entities.user import User
+from app.domain.security.authorization import UserRole
 
 
 class UserRepository(ABC):
     @abstractmethod
-    def create(self, user: User) -> User:
+    def create(
+        self,
+        user: User,
+    ) -> User:
         pass
 
     @abstractmethod
@@ -27,4 +31,15 @@ class UserRepository(ABC):
         self,
         user_id: int,
     ) -> User | None:
+        pass
+
+    @abstractmethod
+    def get_all(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        role: UserRole | None = None,
+        is_active: bool | None = None,
+    ) -> tuple[list[User], int]:
         pass

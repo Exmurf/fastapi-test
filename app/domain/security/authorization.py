@@ -1,8 +1,10 @@
 from enum import Enum
 
+
 class UserRole(str, Enum):
     USER = "user"
     ADMIN = "admin"
+
 
 class Permission(str, Enum):
     PRODUCT_READ_OWN = "product:read:own"
@@ -20,11 +22,14 @@ class Permission(str, Enum):
     PROFILE_UPDATE_OWN = "profile:update:own"
     PROFILE_UPDATE_ALL = "profile:update:all"
 
+    USER_READ_ALL = "user:read:all"
+
     ANALYTICS_READ_OWN = "analytics:read:own"
     ANALYTICS_READ_ALL = "analytics:read:all"
 
     ACTIVITY_READ_OWN = "activity_read_own"
     ACTIVITY_READ_ALL = "activity_read_all"
+
 
 ROLE_PERMISSIONS: dict[
     UserRole,
@@ -56,6 +61,8 @@ ROLE_PERMISSIONS: dict[
         Permission.PROFILE_UPDATE_OWN,
         Permission.PROFILE_UPDATE_ALL,
 
+        Permission.USER_READ_ALL,
+
         Permission.ANALYTICS_READ_OWN,
         Permission.ANALYTICS_READ_ALL,
 
@@ -64,9 +71,10 @@ ROLE_PERMISSIONS: dict[
     },
 }
 
+
 def has_permission(
-        role: UserRole,
-        permission: Permission,
+    role: UserRole,
+    permission: Permission,
 ) -> bool:
     return permission in ROLE_PERMISSIONS.get(
         role,

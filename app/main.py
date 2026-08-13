@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.infrastructure.database import Base, engine
 from app.infrastructure.models.product_model import ProductModel
@@ -19,6 +20,9 @@ from app.presentation.routers.analytics_router import (
 )
 from app.presentation.routers.activity_log_router import (
     router as activity_log_router,
+)
+from app.presentation.routers.user_router import (
+    router as user_router,
 )
 from app.application.exceptions import (
     NotFoundError, 
@@ -48,6 +52,16 @@ app = FastAPI(
 
 app.add_middleware(
     ErrorLoggingMiddleware
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.exception_handler(
@@ -187,6 +201,7 @@ app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(analytics_router)
 app.include_router(activity_log_router)
+app.include_router(user_router)
 
 @app.get("/")
 def root():
