@@ -25,8 +25,22 @@ class TagRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_public_id(
+        self,
+        public_id: str,
+    ) -> Tag | None:
+        pass
+
+    @abstractmethod
     def get_by_names(
         self,
         names: list[str],
     ) -> list[Tag]:
+        pass
+
+    @abstractmethod
+    def delete(
+        self,
+        tag: Tag,
+    ) -> None:
         pass

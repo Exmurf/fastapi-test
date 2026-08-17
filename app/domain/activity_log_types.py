@@ -7,6 +7,7 @@ class ActivityAction(str, Enum):
     PRODUCT_DELETE = "PRODUCT_DELETE"
 
     TAG_CREATE = "TAG_CREATE"
+    TAG_DELETE = "TAG_DELETE"
 
     PROFILE_UPDATE = "PROFILE_UPDATE"
 

@@ -60,6 +60,49 @@ Swagger UI:
 http://localhost:8000/docs
 ```
 
+## Product DB and Cache Performance Test
+
+The performance script generates products under a unique `run_id`. Cleanup
+physically removes only products carrying that marker, their related test
+records, and their Redis product-cache keys. Existing application data is not
+included in the cleanup condition.
+
+Run the complete 10,000-product test. Dummy data is removed automatically even
+if the benchmark fails:
+
+```bash
+DEBUG=false python scripts/product_performance.py run --count 10000
+```
+
+To inspect or test the data manually before removing it, use the separate
+commands. The `seed` command prints the generated `run_id`:
+
+```bash
+DEBUG=false python scripts/product_performance.py seed --count 10000
+DEBUG=false python scripts/product_performance.py benchmark --run-id RUN_ID
+DEBUG=false python scripts/product_performance.py cleanup --run-id RUN_ID
+```
+
+You can also retain the data after a combined run:
+
+```bash
+DEBUG=false python scripts/product_performance.py run --count 10000 --keep-data
+```
+
+By default, the first active user owns the generated products. Select another
+active user when needed:
+
+```bash
+DEBUG=false python scripts/product_performance.py run \
+  --owner-email user@example.com
+```
+
+The report includes first/last-page database reads, server-side sorting by
+name, price and stock, a single-product database read, and Redis hit, miss and
+set timings. Redis measurements are skipped with an explicit message when
+Redis is unavailable. Reported repository/cache timings do not include HTTP,
+authentication, serialization or network latency.
+
 ## Run Locally
 
 Create and activate a virtual environment:

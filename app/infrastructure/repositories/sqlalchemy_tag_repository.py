@@ -73,6 +73,27 @@ class SQLAlchemyTagRepository(
             model
         )
 
+    def get_by_public_id(
+        self,
+        public_id: str,
+    ) -> Tag | None:
+        model = (
+            self.db.query(
+                TagModel
+            )
+            .filter(
+                TagModel.public_id == public_id
+            )
+            .first()
+        )
+
+        if model is None:
+            return None
+
+        return self._to_entity(
+            model
+        )
+
     def get_by_names(
         self,
         names: list[str],
@@ -96,6 +117,26 @@ class SQLAlchemyTagRepository(
             self._to_entity(model)
             for model in models
         ]
+
+    def delete(
+        self,
+        tag: Tag,
+    ) -> None:
+        model = (
+            self.db.query(
+                TagModel
+            )
+            .filter(
+                TagModel.public_id == tag.public_id
+            )
+            .first()
+        )
+
+        if model is None:
+            return
+
+        self.db.delete(model)
+        self.db.commit()
 
     @staticmethod
     def _to_entity(

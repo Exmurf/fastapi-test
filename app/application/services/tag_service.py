@@ -1,6 +1,7 @@
 from app.application.exceptions import (
     AuthorizationError,
     ConflictError,
+    NotFoundError,
     ValidationError,
 )
 from app.application.services.activity_log_service import (
@@ -110,3 +111,40 @@ class TagService:
         )
 
         return created_tag
+
+    def delete_tag(
+        self,
+        public_id: str,
+        current_user: User,
+    ) -> Tag:
+        if not has_permission(
+            current_user.role,
+            Permission.TAG_DELETE,
+        ):
+            raise AuthorizationError(
+                "Tag silmek icin yetkiniz yok"
+            )
+
+        tag = self.repository.get_by_public_id(
+            public_id
+        )
+
+        if tag is None:
+            raise NotFoundError(
+                "Tag bulunamadi"
+            )
+
+        self.repository.delete(
+            tag
+        )
+
+        self.activity_log_service.log(
+            user=current_user,
+            action=ActivityAction.TAG_DELETE,
+            entity_type=ActivityEntityType.TAG,
+            entity_id=tag.public_id,
+            old_value=tag,
+            new_value=None,
+        )
+
+        return tag

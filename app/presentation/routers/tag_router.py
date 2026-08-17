@@ -3,6 +3,7 @@ from fastapi import (
     Depends,
     status,
 )
+from uuid import UUID
 
 from app.application.schemas.tag_schema import (
     TagCreate,
@@ -98,6 +99,45 @@ def create_tag(
 ):
     tag = service.create_tag(
         name=tag_data.name,
+        current_user=current_user,
+    )
+
+    return success_response(
+        tag
+    )
+
+
+@router.delete(
+    "/{tag_public_id}",
+    response_model=(
+        ApiResponse[TagResponse]
+    ),
+    status_code=(
+        status.HTTP_200_OK
+    ),
+    responses={
+        401: {
+            "model": ApiErrorResponse
+        },
+        403: {
+            "model": ApiErrorResponse
+        },
+        404: {
+            "model": ApiErrorResponse
+        },
+    },
+)
+def delete_tag(
+    tag_public_id: UUID,
+    current_user: User = Depends(
+        get_current_user
+    ),
+    service: TagService = Depends(
+        get_tag_service
+    ),
+):
+    tag = service.delete_tag(
+        public_id=str(tag_public_id),
         current_user=current_user,
     )
 

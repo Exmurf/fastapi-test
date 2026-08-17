@@ -33,6 +33,7 @@ class Permission(str, Enum):
 
     TAG_READ = "tag:read"
     TAG_CREATE = "tag:create"
+    TAG_DELETE = "tag:delete"
 
 
 ROLE_PERMISSIONS: dict[
@@ -78,6 +79,7 @@ ROLE_PERMISSIONS: dict[
 
         Permission.TAG_READ,
         Permission.TAG_CREATE,
+        Permission.TAG_DELETE,
     },
 }
 
