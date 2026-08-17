@@ -3,7 +3,11 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.infrastructure.database import Base, engine
+from app.infrastructure.database import (
+    Base,
+    engine,
+    ensure_user_lifecycle_schema,
+)
 from app.infrastructure.models.product_model import ProductModel
 from app.infrastructure.models.user_model import UserModel
 from app.infrastructure.models.refresh_token_model import RefreshTokenModel
@@ -47,6 +51,7 @@ from app.config import settings
 
 
 Base.metadata.create_all(bind=engine)
+ensure_user_lifecycle_schema()
 
 app = FastAPI(
     title= settings.app_name,

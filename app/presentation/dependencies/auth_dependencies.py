@@ -121,7 +121,11 @@ def get_current_user(
         token_payload.subject
     )
 
-    if user is None or not user.is_active:
+    if (
+        user is None
+        or not user.is_active
+        or user.is_deleted
+    ):
         raise AuthenticationError(
             "Gecersiz veya suresi dolmus access token"
         )

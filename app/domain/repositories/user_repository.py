@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from app.domain.entities.user import User
 from app.domain.security.authorization import UserRole
@@ -41,6 +42,7 @@ class UserRepository(ABC):
         search: str | None = None,
         role: UserRole | None = None,
         is_active: bool | None = None,
+        is_deleted: bool | None = None,
     ) -> tuple[list[User], int]:
         pass
 
@@ -49,5 +51,14 @@ class UserRepository(ABC):
         self,
         public_id: str,
         is_active: bool,
+    ) -> User | None:
+        pass
+
+    @abstractmethod
+    def soft_delete(
+        self,
+        public_id: str,
+        deleted_email: str,
+        deleted_at: datetime,
     ) -> User | None:
         pass

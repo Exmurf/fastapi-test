@@ -13,4 +13,6 @@ class User:
     password_hash: str
     role: UserRole = UserRole.USER
     is_active: bool = True
+    is_deleted: bool = False
+    deleted_at: datetime | None = None
     created_at: datetime | None = None

@@ -137,9 +137,15 @@ class AuthService:
                 "E-posta veya sifre hatali"
             )
 
+        if user.is_deleted:
+            raise AuthenticationError(
+                "Bu hesap silinmiş"
+            )
+
         if not user.is_active:
             raise AuthenticationError(
-                "E-posta veya sifre hatali"
+                "Hesabınız pasif durumda. "
+                "Yöneticinizle iletişime geçin."
             )
 
         if user.public_id is None:
@@ -241,6 +247,7 @@ class AuthService:
         if(
             user is None
             or not user.is_active
+            or user.is_deleted
             or user.id is None
             or user.public_id is None
         ):

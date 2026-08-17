@@ -23,6 +23,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: UserRole
     is_active: bool
+    is_deleted: bool
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -54,4 +55,3 @@ class LogoutRequest(BaseModel):
     refresh_token: str = Field(
         min_length=1,
     )
-

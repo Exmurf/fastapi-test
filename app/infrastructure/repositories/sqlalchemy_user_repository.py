@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.domain.entities.user import User
 from app.domain.repositories.user_repository import (
@@ -30,6 +31,8 @@ class SQLAlchemyUserRepository(
             password_hash=user.password_hash,
             role=user.role,
             is_active=user.is_active,
+            is_deleted=user.is_deleted,
+            deleted_at=user.deleted_at,
         )
 
         self.db.add(
@@ -115,6 +118,7 @@ class SQLAlchemyUserRepository(
         search: str | None = None,
         role: UserRole | None = None,
         is_active: bool | None = None,
+        is_deleted: bool | None = None,
     ) -> tuple[list[User], int]:
         query = self.db.query(
             UserModel
@@ -136,6 +140,12 @@ class SQLAlchemyUserRepository(
             query = query.filter(
                 UserModel.is_active
                 == is_active
+            )
+
+        if is_deleted is not None:
+            query = query.filter(
+                UserModel.is_deleted
+                == is_deleted
             )
 
         total_items = (
@@ -201,6 +211,36 @@ class SQLAlchemyUserRepository(
             user_model
         )
 
+    def soft_delete(
+        self,
+        public_id: str,
+        deleted_email: str,
+        deleted_at: datetime,
+    ) -> User | None:
+        user_model = (
+            self.db
+            .query(UserModel)
+            .filter(
+                UserModel.public_id
+                == public_id
+            )
+            .first()
+        )
+
+        if user_model is None:
+            return None
+
+        user_model.email = deleted_email
+        user_model.is_deleted = True
+        user_model.deleted_at = deleted_at
+
+        self.db.commit()
+        self.db.refresh(user_model)
+
+        return self._to_entity(
+            user_model
+        )
+
     @staticmethod
     def _to_entity(
         user_model: UserModel,
@@ -217,6 +257,12 @@ class SQLAlchemyUserRepository(
             role=user_model.role,
             is_active=(
                 user_model.is_active
+            ),
+            is_deleted=(
+                user_model.is_deleted
+            ),
+            deleted_at=(
+                user_model.deleted_at
             ),
             created_at=(
                 user_model.created_at

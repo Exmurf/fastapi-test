@@ -8,6 +8,7 @@ from fastapi import (
 
 from app.application.schemas.user_schema import (
     PaginatedUserResponse,
+    UserActiveUpdateRequest,
     UserListItemResponse,
 )
 
@@ -88,6 +89,10 @@ def get_users(
         default=None,
     ),
 
+    is_deleted: bool | None = Query(
+        default=None,
+    ),
+
     current_user:
     User = Depends(
         get_current_user
@@ -107,10 +112,60 @@ def get_users(
         search=search,
         role=role,
         is_active=is_active,
+        is_deleted=is_deleted,
     )
 
     return success_response(
         result
+    )
+
+
+@router.patch(
+    "/{user_public_id}/active",
+    response_model=(
+        ApiResponse[
+            UserListItemResponse
+        ]
+    ),
+    responses={
+        400: {
+            "model":
+                ApiErrorResponse,
+        },
+        401: {
+            "model":
+                ApiErrorResponse,
+        },
+        403: {
+            "model":
+                ApiErrorResponse,
+        },
+        404: {
+            "model":
+                ApiErrorResponse,
+        },
+    },
+)
+def update_user_active(
+    user_public_id: UUID,
+    payload: UserActiveUpdateRequest,
+    current_user: User = Depends(
+        get_current_user
+    ),
+    service: UserService = Depends(
+        get_user_service
+    ),
+):
+    user = service.update_user_active(
+        current_user=current_user,
+        user_public_id=str(
+            user_public_id
+        ),
+        is_active=payload.is_active,
+    )
+
+    return success_response(
+        user
     )
 
 

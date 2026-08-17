@@ -21,7 +21,13 @@ class UserListItemResponse(BaseModel):
     email: EmailStr
     role: UserRole
     is_active: bool
+    is_deleted: bool
+    deleted_at: datetime | None
     created_at: datetime | None
+
+
+class UserActiveUpdateRequest(BaseModel):
+    is_active: bool
 
 
 class PaginatedUserResponse(BaseModel):

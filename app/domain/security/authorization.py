@@ -23,6 +23,7 @@ class Permission(str, Enum):
     PROFILE_UPDATE_ALL = "profile:update:all"
 
     USER_READ_ALL = "user:read:all"
+    USER_UPDATE_ALL = "user:update:all"
     USER_DELETE_ALL = "user:delete:all"
 
     ANALYTICS_READ_OWN = "analytics:read:own"
@@ -69,6 +70,7 @@ ROLE_PERMISSIONS: dict[
         Permission.PROFILE_UPDATE_ALL,
 
         Permission.USER_READ_ALL,
+        Permission.USER_UPDATE_ALL,
         Permission.USER_DELETE_ALL,
 
         Permission.ANALYTICS_READ_OWN,

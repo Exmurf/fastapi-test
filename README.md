@@ -153,3 +153,20 @@ Interactive API documentation is available at:
 ```text
 http://localhost:8000/docs
 ```
+
+## User Lifecycle
+
+User availability and deletion are separate states:
+
+- `PATCH /users/{user_public_id}/active` changes only `is_active` with an
+  `{"is_active": true|false}` request body.
+- Inactive accounts remain in the system and receive an explicit inactive
+  account message when they try to sign in.
+- `DELETE /users/{user_public_id}` performs a soft delete. It sets
+  `is_deleted=true`, records `deleted_at`, and preserves the active state.
+- During soft deletion, the address is changed to a unique valid address such
+  as `user+deleted-YYYYMMDDHHMMSS-UUID@example.com`. The original address can
+  therefore be registered again.
+
+Existing databases are upgraded automatically on startup. Accounts made
+inactive by the legacy delete behavior are migrated to the new deleted state.
