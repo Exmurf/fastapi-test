@@ -22,6 +22,7 @@ dist/
 database.db
 *.sqlite
 *.sqlite3
+data/
 
 # Backend / application logs
 cron.log

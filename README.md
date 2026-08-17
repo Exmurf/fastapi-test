@@ -22,9 +22,18 @@ The project includes authentication, authorization, product management, activity
 
 Create a `.env` file in the project root. An example is available in the root.
 
-## Run with Docker Compose
+## Run the Complete Stack with Docker Compose
 
-Build and start FastAPI and Redis:
+Keep the backend and frontend directories next to each other:
+
+```text
+parent-directory/
+├── proje/
+└── fastapi-frontend/
+```
+
+From the backend directory, build and start the React frontend, FastAPI API,
+and Redis with one command:
 
 ```bash
 docker compose up -d --build
@@ -36,10 +45,19 @@ Check running services:
 docker compose ps
 ```
 
-View FastAPI logs:
+The services will be available at:
+
+```text
+Frontend:    http://localhost:5173
+Backend API: http://localhost:8000
+Swagger UI:  http://localhost:8000/docs
+Redis:       localhost:6379
+```
+
+View all service logs:
 
 ```bash
-docker compose logs -f fastapi
+docker compose logs -f
 ```
 
 Stop the services:
@@ -48,16 +66,20 @@ Stop the services:
 docker compose down
 ```
 
-The API will be available at:
+The SQLite database is stored in `./data/database.db`, application logs in
+`./logs`, and Redis data in the `redis-data` Docker volume. These survive
+container rebuilds. To use a differently named frontend directory, set its
+path when running Compose:
 
-```text
-http://localhost:8000
+```bash
+FRONTEND_CONTEXT=../product-frontend docker compose up -d --build
 ```
 
-Swagger UI:
+Rebuild every service from scratch:
 
-```text
-http://localhost:8000/docs
+```bash
+docker compose down --rmi all --remove-orphans
+docker compose up -d --build
 ```
 
 ## Product DB and Cache Performance Test

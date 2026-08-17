@@ -1,27 +1,70 @@
 services:
-  fastapi:
-    build: .
-    container_name: fastapi-container
-
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: product-backend:latest
+    container_name: product-backend
     env_file:
       - .env
-
     environment:
+      DATABASE_URL: sqlite:////app/data/database.db
       REDIS_URL: redis://redis:6379/0
-
     ports:
-      - "8000:8000"
-
-
+      - "127.0.0.1:8000:8000"
     volumes:
+      - ./data:/app/data
       - ./logs:/app/logs
-
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - product-network
+
+  frontend:
+    build:
+      context: ${FRONTEND_CONTEXT:-../fastapi-frontend}
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    image: product-frontend:latest
+    container_name: product-frontend
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - product-network
 
   redis:
     image: redis:8-alpine
-    container_name: redis
-
+    container_name: product-redis
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - product-network
+
+volumes:
+  redis-data:
+
+networks:
+  product-network:
+    driver: bridge
