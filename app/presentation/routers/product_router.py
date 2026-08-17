@@ -44,6 +44,9 @@ from app.presentation.dependencies.activity_log_dependencies import (
 from app.infrastructure.repositories.redis_product_cache_repository import (
     RedisProductCacheRepository,
 )
+from app.infrastructure.repositories.sqlalchemy_tag_repository import (
+    SQLAlchemyTagRepository,
+)
 
 
 router = APIRouter(
@@ -73,6 +76,11 @@ def get_product_service(
             activity_log_service
         ),
         cache_repository=cache_repository,
+        tag_repository=(
+            SQLAlchemyTagRepository(
+                db
+            )
+        ),
     )
 
 

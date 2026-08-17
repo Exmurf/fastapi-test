@@ -8,14 +8,9 @@ from app.application.exceptions import (
 )
 from app.domain.security.authorization import (
     Permission,
-    UserRole,
     has_permission,
 )
 from app.domain.entities.user import User
-from app.domain.security.authorization import (
-    Permission,
-    has_permission,
-)
 from app.domain.entities.product_detail import (
     ProductDetail,
 )
@@ -32,6 +27,9 @@ from app.domain.activity_log_types import (
 from app.domain.repositories.product_cache_repository import (
     ProductCacheRepository,
 )
+from app.domain.repositories.tag_repository import (
+    TagRepository,
+)
 
 from uuid import UUID
 import math
@@ -43,11 +41,13 @@ class ProductService:
         detail_repository: ProductDetailRepository,
         activity_log_service: ActivityLogService,
         cache_repository: ProductCacheRepository,
+        tag_repository: TagRepository,
     ):
         self.repository = repository
         self.detail_repository = detail_repository
         self.activity_log_service = activity_log_service
         self.cache_repository = cache_repository
+        self.tag_repository = tag_repository
 
     def create_product(
             self,
@@ -70,6 +70,10 @@ class ProductService:
 
         normalized_tags = self._normalize_tags(
             tags
+        )
+
+        self._validate_tags_exist(
+            normalized_tags
         )
 
         product = Product(
@@ -305,10 +309,10 @@ class ProductService:
     def update_product(
         self,
         public_id: str,
-        name: str,
-        price: float,
-        stock: int,
-        tags: list[str],
+        name: str | None,
+        price: float | None,
+        stock: int | None,
+        tags: list[str] | None,
         current_user: User,
     ) -> Product:
         if name is not None and not name.strip():
@@ -347,9 +351,15 @@ class ProductService:
 
 
         normalized_tags = (
-                    self._normalize_tags(tags)
-                    if tags is not None
-                    else existing_product.tags
+            self._normalize_tags(
+                tags
+            )
+            if tags is not None
+            else existing_product.tags
+        )
+
+        self._validate_tags_exist(
+            normalized_tags
         )
 
         product = Product(
@@ -377,11 +387,7 @@ class ProductService:
 
             created_at=existing_product.created_at,
 
-            tags=(
-                self._normalize_tags(tags)
-                if tags is not None
-                else existing_product.tags
-            ),
+            tags=normalized_tags,
 
             detail=existing_product.detail,
         )
@@ -485,6 +491,42 @@ class ProductService:
         raise AuthorizationError(
             "Bu islem icin yetkiniz yok"
         )
+
+    def _validate_tags_exist(
+        self,
+        tags: list[str],
+    ) -> None:
+        if not tags:
+            return
+
+        existing_tags = (
+            self.tag_repository
+            .get_by_names(
+                tags
+            )
+        )
+
+        existing_tag_names = {
+            tag.name
+            for tag
+            in existing_tags
+        }
+
+        missing_tag_names = [
+            tag_name
+            for tag_name
+            in tags
+            if tag_name
+            not in existing_tag_names
+        ]
+
+        if missing_tag_names:
+            raise ValidationError(
+                "Olmayan tag kullanilamaz: "
+                + ", ".join(
+                    missing_tag_names
+                )
+            )
 
     @staticmethod
     def _normalize_tags(

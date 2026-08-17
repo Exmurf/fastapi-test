@@ -304,28 +304,49 @@ class SQLAlchemyProductRepository(ProductRepository):
         self,
         tag_names: list[str],
     ) -> list[TagModel]:
-        tag_models = []
+        if not tag_names:
+            return []
 
-        for tag_name in tag_names:
-            tag_model = (
-                self.db.query(TagModel)
-                .filter(
-                    TagModel.name
-                    == tag_name
+        tag_models = (
+            self.db.query(
+                TagModel
+            )
+            .filter(
+                TagModel.name.in_(
+                    tag_names
                 )
-                .first()
+            )
+            .all()
+        )
+
+        tag_models_by_name = {
+            tag_model.name:
+                tag_model
+            for tag_model
+            in tag_models
+        }
+
+        missing_tag_names = [
+            tag_name
+            for tag_name
+            in tag_names
+            if tag_name
+            not in tag_models_by_name
+        ]
+
+        if missing_tag_names:
+            raise RuntimeError(
+                "Product repository'ye "
+                "mevcut olmayan tag gonderildi: "
+                + ", ".join(
+                    missing_tag_names
+                )
             )
 
-            if tag_model is None:
-                tag_model = TagModel(
-                    name=tag_name
-                )
-
-                self.db.add(tag_model)
-
-            tag_models.append(tag_model)
-
-        return tag_models
-
-
-        
+        return [
+            tag_models_by_name[
+                tag_name
+            ]
+            for tag_name
+            in tag_names
+        ]

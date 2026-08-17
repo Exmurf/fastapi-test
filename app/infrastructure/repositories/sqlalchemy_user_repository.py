@@ -169,6 +169,38 @@ class SQLAlchemyUserRepository(
             total_items,
         )
 
+    def update_is_active(
+        self,
+        public_id: str,
+        is_active: bool,
+    ) -> User | None:
+        user_model = (
+            self.db
+            .query(UserModel)
+            .filter(
+                UserModel.public_id
+                == public_id
+            )
+            .first()
+        )
+
+        if user_model is None:
+            return None
+
+        user_model.is_active = (
+            is_active
+        )
+
+        self.db.commit()
+
+        self.db.refresh(
+            user_model
+        )
+
+        return self._to_entity(
+            user_model
+        )
+
     @staticmethod
     def _to_entity(
         user_model: UserModel,

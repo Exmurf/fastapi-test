@@ -24,6 +24,9 @@ from app.presentation.routers.activity_log_router import (
 from app.presentation.routers.user_router import (
     router as user_router,
 )
+from app.presentation.routers.tag_router import (
+    router as tag_router,
+)
 from app.application.exceptions import (
     NotFoundError, 
     ValidationError,
@@ -202,6 +205,7 @@ app.include_router(profile_router)
 app.include_router(analytics_router)
 app.include_router(activity_log_router)
 app.include_router(user_router)
+app.include_router(tag_router)
 
 @app.get("/")
 def root():

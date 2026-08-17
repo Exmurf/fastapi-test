@@ -43,3 +43,11 @@ class UserRepository(ABC):
         is_active: bool | None = None,
     ) -> tuple[list[User], int]:
         pass
+
+    @abstractmethod
+    def update_is_active(
+        self,
+        public_id: str,
+        is_active: bool,
+    ) -> User | None:
+        pass

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -6,6 +8,7 @@ from fastapi import (
 
 from app.application.schemas.user_schema import (
     PaginatedUserResponse,
+    UserListItemResponse,
 )
 
 from app.application.services.user_service import (
@@ -40,17 +43,22 @@ router = APIRouter(
     tags=["Users"],
 )
 
+
 @router.get(
     "",
     response_model=(
-        ApiResponse[PaginatedUserResponse]
+        ApiResponse[
+            PaginatedUserResponse
+        ]
     ),
     responses={
-        401:{
-            "model": ApiErrorResponse
+        401: {
+            "model":
+                ApiErrorResponse,
         },
-        403:{
-            "model": ApiErrorResponse
+        403: {
+            "model":
+                ApiErrorResponse,
         },
     },
 )
@@ -58,50 +66,42 @@ def get_users(
     page: int = Query(
         default=1,
         ge=1,
-        description=(
-            "Sayfa numarasi"
-        ),
     ),
+
     page_size: int = Query(
         default=20,
         ge=1,
         le=100,
-        description=(
-            "Sayfa basina "
-            "kullanici sayisi"
-        ),
     ),
+
     search: str | None = Query(
         default=None,
         min_length=1,
         max_length=255,
-        description=(
-            "Kullanici e-posta "
-            "adresinde aranacak "
-            "metin"
-        ),
     ),
+
     role: UserRole | None = Query(
         default=None,
-        description=(
-            "Kullanici rol filtresi"
-        ),
     ),
+
     is_active: bool | None = Query(
         default=None,
-        description=(
-            "Aktiflik durumu filtresi"
-        ),
     ),
-    current_user: User = Depends(
+
+    current_user:
+    User = Depends(
         get_current_user
     ),
-    service: UserService = Depends(
+
+    service:
+    UserService = Depends(
         get_user_service
     ),
 ):
     result = service.get_users(
-        current_user=current_user,
+        current_user=(
+            current_user
+        ),
         page=page,
         page_size=page_size,
         search=search,
@@ -109,4 +109,57 @@ def get_users(
         is_active=is_active,
     )
 
-    return success_response(result)
+    return success_response(
+        result
+    )
+
+
+@router.delete(
+    "/{user_public_id}",
+    response_model=(
+        ApiResponse[
+            UserListItemResponse
+        ]
+    ),
+    responses={
+        400: {
+            "model":
+                ApiErrorResponse,
+        },
+        401: {
+            "model":
+                ApiErrorResponse,
+        },
+        403: {
+            "model":
+                ApiErrorResponse,
+        },
+        404: {
+            "model":
+                ApiErrorResponse,
+        },
+    },
+)
+def delete_user(
+    user_public_id: UUID,
+
+    current_user:
+    User = Depends(
+        get_current_user
+    ),
+
+    service:
+    UserService = Depends(
+        get_user_service
+    ),
+):
+    user = service.delete_user(
+        current_user=current_user,
+        user_public_id=str(
+            user_public_id
+        ),
+    )
+
+    return success_response(
+        user
+    )
